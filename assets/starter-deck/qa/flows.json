@@ -1,0 +1,62 @@
+{
+  "flows": [
+    {
+      "name": "도구를 조작하고 다음 페이지로 이동",
+      "sessions": {
+        "presenter": "/#demo"
+      },
+      "steps": [
+        {
+          "session": "presenter",
+          "action": "fill",
+          "selector": "#student-count",
+          "value": "1"
+        },
+        {
+          "session": "presenter",
+          "action": "click",
+          "selector": "#draw"
+        },
+        {
+          "session": "presenter",
+          "action": "expectText",
+          "selector": "#draw-result",
+          "value": "1번"
+        },
+        {
+          "session": "presenter",
+          "action": "click",
+          "selector": "[data-tab=plan]"
+        },
+        {
+          "session": "presenter",
+          "action": "fill",
+          "selector": "#request-note",
+          "value": "수업에서 쓸 도구"
+        },
+        {
+          "session": "presenter",
+          "action": "press",
+          "selector": "#request-note",
+          "value": "ArrowRight"
+        },
+        {
+          "session": "presenter",
+          "action": "expectVisible",
+          "selector": "#demo"
+        },
+        {
+          "session": "presenter",
+          "action": "click",
+          "selector": "[data-next]"
+        },
+        {
+          "session": "presenter",
+          "action": "expectVisible",
+          "selector": "#resources"
+        }
+      ],
+      "publicSafe": true
+    }
+  ]
+}

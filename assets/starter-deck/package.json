@@ -1,0 +1,14 @@
+{
+  "name": "vanollim-workshop-deck",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "doctor": "node harness/harness.mjs doctor",
+    "check": "node harness/harness.mjs check",
+    "dev": "node harness/harness.mjs serve",
+    "verify": "node harness/harness.mjs verify",
+    "deploy:check": "node harness/harness.mjs deploy --dry-run",
+    "deploy": "node harness/harness.mjs deploy --execute"
+  }
+}

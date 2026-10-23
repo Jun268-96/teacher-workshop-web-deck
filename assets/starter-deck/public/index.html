@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="반올림 디지털 스쿨 웹 발표자료 템플릿">
+  <title>우리 반에 필요한 도구 만들기</title>
+  <link rel="icon" href="assets/brand/vanollim-pixel.png"><link rel="stylesheet" href="style.css">
+  <script src="config.js" defer></script><script src="script.js" defer></script>
+</head>
+<body>
+  <main id="deck">
+    <section class="slide cover active" id="start" data-title="시작" data-tone="pink" aria-labelledby="cover-title">
+      <header class="cover-brand" data-qa><img data-logo src="assets/brand/vanollim-pixel.png" alt="반올림 디지털 스쿨"><p data-config="host">반올림 디지털 스쿨</p></header>
+      <div class="cover-grid" data-qa>
+        <div><p class="muted">교사 연수 · <span data-duration>15</span>분</p><h1 id="cover-title" data-config="title">우리 반에 필요한<br>도구 만들기</h1></div>
+        <div class="mascots" data-mascots hidden aria-label="반디와 디디">
+          <span class="pixel pink" aria-hidden="true"></span><span class="pixel yellow" aria-hidden="true"></span>
+          <button class="mascot didi" aria-label="디디" type="button"><span><i></i></span></button>
+          <button class="mascot bandi" aria-label="반디" type="button"><span><i></i></span></button>
+        </div>
+      </div>
+      <footer class="cover-footer" data-qa><p data-config="presenter">발표자</p><button class="primary" data-go="chapter" type="button">연수 시작 →</button></footer>
+    </section>
+    <section class="slide statement" id="chapter" data-title="도구 제작" data-tone="yellow" aria-labelledby="chapter-title" hidden>
+      <h2 id="chapter-title" data-qa>1. 우리 반의 도구</h2>
+    </section>
+    <section class="slide statement" id="message" data-title="필요한 한 장면" data-tone="lime" aria-labelledby="message-title" hidden>
+      <h2 id="message-title" data-qa>당장 필요한<br>한 장면부터 만드세요.</h2>
+    </section>
+    <section class="slide" id="compare" data-title="화면 비교" data-tone="pink" data-evidence="teaching-demo" aria-labelledby="compare-title" hidden>
+      <h2 id="compare-title" data-qa>필요한 부분을 크게</h2>
+      <div class="compare-grid" data-qa>
+        <figure class="specimen before"><figcaption>수정 전</figcaption><div class="mini-app"><aside>학급 도구<br>출석<br>활동<br>기록<br>발표</aside><div><small>오늘의 학급 활동 현황</small><h3>발표자 뽑기</h3><p>학급 구성원 중 발표할 학생을 선택하고 발표 순서를 확인할 수 있습니다.</p><div class="mini-stats"><span>출석 24</span><span>활동 3</span><span>기록 12</span></div><button type="button" disabled>발표자 뽑기</button></div></div></figure>
+        <figure class="specimen after"><figcaption>수정 후</figcaption><div class="large-app"><h3>누가 발표할까요?</h3><strong>12번</strong><span>발표에 집중합니다.</span></div></figure>
+      </div>
+    </section>
+    <section class="slide" id="demo" data-title="직접 해보기" data-tone="yellow" aria-labelledby="demo-title" hidden>
+      <h2 id="demo-title" data-qa>직접 해보기</h2>
+      <div class="demo-tabs" role="tablist" aria-label="수업 도구" data-qa>
+        <button id="tab-draw" type="button" role="tab" data-tab="draw" aria-selected="true" aria-controls="panel-draw">발표 추첨</button>
+        <button id="tab-plan" type="button" role="tab" data-tab="plan" aria-selected="false" aria-controls="panel-plan">요청 메모</button>
+      </div>
+      <div class="demo-panel draw-panel" id="panel-draw" role="tabpanel" aria-labelledby="tab-draw" data-panel="draw" data-qa>
+        <label>학생 수 <input id="student-count" type="number" min="1" max="100" value="24"></label>
+        <output id="draw-result" aria-live="polite">?</output><button type="button" class="primary" id="draw">한 명 뽑기</button>
+      </div>
+      <div class="demo-panel" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" data-panel="plan" data-qa hidden>
+        <label for="request-note">어떤 장면에 쓸 건가요?</label><textarea id="request-note" rows="3" placeholder="수업 상황과 학생의 행동을 적어보세요."></textarea>
+      </div>
+    </section>
+    <section class="slide" id="resources" data-title="자료 둘러보기" data-tone="lime" aria-labelledby="resources-title" hidden>
+      <h2 id="resources-title" data-qa>자료 둘러보기</h2><div class="resource-grid" data-resources data-qa></div>
+    </section>
+    <section class="slide closing" id="closing" data-title="마무리" data-tone="pink" aria-labelledby="closing-title" hidden>
+      <h2 id="closing-title" data-qa>작게 만들어,<br><mark>꼭 써보세요.</mark></h2>
+      <img class="closing-art" src="assets/brand/bandi.png" alt="반디" data-mascots hidden data-qa>
+    </section>
+  </main>
+  <img class="brand-signature" data-logo src="assets/brand/vanollim-pixel.png" alt="반올림 디지털 스쿨" aria-hidden="true">
+  <aside class="timer" data-timer hidden>
+    <button type="button" id="timer-toggle" aria-expanded="false" aria-controls="timer-controls" aria-label="발표 타이머"><span aria-hidden="true">●</span> <output id="timer-output">15:00</output></button>
+    <div id="timer-controls" hidden><button type="button" id="timer-start">시작</button><button type="button" id="timer-reset">초기화</button></div>
+  </aside>
+  <nav class="deck-nav" aria-label="발표 페이지">
+    <button type="button" data-prev aria-label="이전 페이지">← <span>이전</span></button>
+    <div class="toc-anchor"><button type="button" id="toc-toggle" aria-expanded="false" aria-controls="contents"><b data-counter>1 / 7</b><span data-current-title>시작</span></button><div id="contents" role="region" aria-label="목차" hidden></div></div>
+    <button type="button" data-next aria-label="다음 페이지"><span>다음</span> →</button>
+  </nav>
+  <div class="progress" aria-hidden="true"><i></i></div><p class="sr-only" id="deck-status" role="status" aria-live="polite"></p>
+</body></html>
