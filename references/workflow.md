@@ -1,5 +1,15 @@
 # Workshop flow and content handling
 
+## Workshop format comes first
+
+The 15-minute example is a short presentation, not the default duration or structure. Choose by intended participant action, not duration alone. If the format is unclear, ask whether participants will practise; recommend a hands-on option when useful.
+
+- Presentation or case introduction: a clear result, selected evidence, one understandable demonstration, and a next action. Do not force individual practice into an explicitly presentation-only session.
+- Guided training: alternate short explanation/demo, bounded participant work, and completion checks. Include setup, troubleshooting, feedback, and application in the participant's own context.
+- Workshop: define a shared challenge, allow individual/group decisions and making, then provide feedback and revision. Do not fill extra time with more lecture slides.
+
+Use [research-and-formats.md](research-and-formats.md) for short-request research and the practice contract.
+
 ## Default workshop arc
 
 Start from the requested outcome, not a slide count. A common teacher-workshop sequence is:
@@ -40,11 +50,11 @@ Needed from presenter: one public URL, approved screenshot, or a 3–5 sentence 
 Fallback: omit this branch; retain the concept and practice prompt.
 ```
 
-Do not visually disguise a case slot as a completed example. During briefing, ask the user to choose whether to provide the material, allow research, or remove the slot.
+Do not visually disguise a case slot as a completed example. Research a suitable public example when it fits the objective. Ask only when a necessary personal case, access permission, or a choice to omit the case remains unresolved. Ordinary public-source research does not need repeated permission; private material or paid access does.
 
 ## Time design
 
-Reserve time for actions rather than filling all available minutes with explanation. Mark each section as essential, optional, or removable. A long workshop needs planned recovery points; a short workshop needs one complete outcome rather than a tour of every feature.
+Reserve time for actions rather than filling all available minutes with explanation. For hands-on work, record the participant artifact, success criteria, approximate work time, checkpoints, recovery path, and feedback/application step. Account for tool installation/login, waiting, questions, and breaks; check the total against the confirmed session length. Do not silently borrow time from practice to cover an oversized lecture. Mark each section as essential, optional, or removable. A long workshop needs planned recovery points; a short workshop needs one complete outcome rather than a tour of every feature.
 
 ## Approval boundary
 

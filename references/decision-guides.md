@@ -6,10 +6,10 @@ Use these guides internally. Their job is to reach a clear recommendation, not t
 
 Start with the learning outcome, inspect the material, select a default, and explain the decision in one sentence. Ask a focused question only at a decision gate:
 
-- a required real case has no approved material;
+- a necessary personal case still lacks approved material after checking available sources;
 - privacy, permission, or attribution is unclear;
 - two genuinely different workshop directions remain equally defensible;
-- the choice changes a major commitment such as a realtime backend, public research, live deployment, or a required participant account.
+- the choice changes a major commitment such as a realtime backend, paid/private research, public deployment, or a required participant account. Ordinary reading/searching of public sources is part of content preparation.
 
 Do not ask whether to split every slide, which animation style to use, or which of several minor visual variants the user prefers. Make those choices from the teaching goal and revise from feedback.
 
