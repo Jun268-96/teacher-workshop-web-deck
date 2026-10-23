@@ -4,7 +4,7 @@ Use these guides internally. Their job is to reach a clear recommendation, not t
 
 ## Decision posture
 
-Start with the learning outcome, inspect the material, select a default, and explain the decision in one sentence. Ask a focused question only at a decision gate:
+Start with the learning outcome, inspect the material, select a default, and explain the decision in one sentence. For a new workshop or substantial restructuring, always use the page-plan approval gate below unless the user explicitly waives it or has already approved that plan. Outside that gate, ask focused questions only when:
 
 - a necessary personal case still lacks approved material after checking available sources;
 - privacy, permission, or attribution is unclear;
@@ -78,13 +78,23 @@ Case slot: optional real example of a repaired workflow, pending presenter appro
 Fallback: use the built-in replay.
 ```
 
-## User-facing planning output
+<a id="page-plan-approval"></a>
+## Page-plan approval
 
-For each section, show only:
+Before substantial production of a new deck or a full restructuring, present the complete page plan. A section list alone is not enough. For a long deck, group the compact rows by section while still showing every page. Avoid a full script or a menu of minor design choices.
 
-- the recommended slide/scene form;
-- its learning reason;
-- its evidence form;
-- a case-slot request or decision gate only when unresolved.
+Use a compact table, adapting column widths to the actual workshop:
 
-Do not expose raw scoring unless requested. This preserves a decisive workflow while leaving meaningful choices with the presenter.
+| Page / title | One message and evidence | Visible layout / internal states | Presenter and participant action | Approx. time |
+|---|---|---|---|---|
+| stable ID and short Korean title | what the audience needs to understand; real source when relevant | single statement, large screenshot, before/after, demo, practice; name internal states | what the presenter does and what participants see/do | include work, waiting and check-in time |
+
+Also state the overall arc, page count, session-time total including the agreed Q&A/break boundaries, required interactive modules, and unresolved source or setup needs. In a hands-on workshop, make practice blocks and success criteria visible in this plan. Recommend one coherent arrangement and explain important choices briefly.
+
+Ask one direct confirmation, for example: “이 페이지 구성과 진행 방식으로 제작할까요? 바꿀 부분이 있으면 먼저 조정하겠습니다.” Wait for the response before substantial HTML/CSS/JS, new visual-asset production, production-tool installation, or deployment. Source reading, ordinary public research, source inventory and text/structural planning may continue before this point. Do not turn silence or a generic earlier “알아서 해줘” into approval of an unseen plan.
+
+Record status, the actual user approval/explicit waiver, and the approved map version in `workshop/slide-map.md`. An agent must not invent the confirmation. An earlier approval of this same plan followed by a build instruction is sufficient; do not ask again. User instructions to skip this gate take precedence.
+
+After approval, make routine typography, crops, spacing and implementation choices within the agreed scope without further gates. Reconfirm only a substantial change to learning flow, practice allocation, overall scope, participant features, or a new external commitment; show the changed portion rather than repeating the entire intake. A narrow fix to an existing deck does not require a new whole-deck map approval.
+
+This is a human planning gate. The deployment harness checks actual browser/visual evidence; it does not prove that a human approved a plan merely because a file says “approved”.

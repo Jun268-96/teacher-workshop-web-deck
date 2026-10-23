@@ -58,4 +58,4 @@ Reserve time for actions rather than filling all available minutes with explanat
 
 ## Approval boundary
 
-Before substantial implementation, present the workshop map plus: required inputs, unresolved case slots, proposed interactions, and any research/deployment dependency. Revise the structure after user feedback rather than assuming every supplied note is equal-priority slide copy.
+Before substantial implementation, present the full page-by-page map and wait for the user to confirm it. Follow [Page-plan approval](decision-guides.md#page-plan-approval): titles, visible messages/layouts, internal states, presenter/participant actions, timing, and required evidence/modules. Revise from feedback before building. Reuse an already approved plan and skip this gate for narrow edits or when the user explicitly waives it.
