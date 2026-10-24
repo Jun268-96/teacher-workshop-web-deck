@@ -90,7 +90,7 @@ node --test scripts/*.test.mjs
 
 ## 화면에서 수정하기
 
-로컬 발표 주소 뒤에 `?edit=1`을 붙이고 ‘편집’을 누르세요. 대상을 클릭해 직접 고치거나 AI 요청을 다섯 개씩 모을 수 있습니다. 요청·편집본·소스 ZIP을 AI에게 함께 주고, 받은 데이터 변경안을 미리 본 뒤 취소/확정합니다. ChatGPT 주석을 사용할 수 없는 브라우저에서는 복사/JSON 저장을 사용합니다. 편집본과 발표용 단일 HTML을 따로 저장할 수 있습니다.
+로컬 발표 주소 뒤에 `?edit=1`을 붙이고 ‘편집’을 누르세요. 왼쪽 썸네일로 페이지를 고르고, 텍스트·사진을 선택하면 가까이에 도구막대가 나타납니다. 정밀 배치·노트·동작·전달은 필요할 때만 별도 창에서 엽니다. `추가`에서 텍스트/사진/영상과 클릭 공개·사진 비교·숫자 모션·사진 슬라이드를 시험하고 삽입할 수 있습니다. 기존 기능을 유지하며 대상별 AI 요청도 모을 수 있습니다. 요청·편집본·소스 ZIP을 AI에게 함께 주고, 받은 데이터 변경안을 미리 본 뒤 취소/확정합니다. ChatGPT 주석을 사용할 수 없는 브라우저에서는 복사/JSON 저장을 사용합니다. 편집본과 발표용 단일 HTML을 따로 저장할 수 있습니다.
 
 ```sh
 node scripts/create-deck.mjs --dest ../editor-live-demo --example editor-live
@@ -104,7 +104,7 @@ node scripts/create-deck.mjs --dest ../editor-live-demo --example editor-live
 node scripts/package-deck.mjs --project ../editor-live-demo --dest ../demo-source.zip
 ```
 
-[편집·AI 요청·전달](references/editing-and-handoff.md) · [참여 서버 실행·권한·운영 경계](references/participation-runtime.md) · [이전 버전에서 이동](references/migration.md) · [구현 범위와 남은 기능](references/implementation-status.md)
+[편집 화면과 장면 삽입](references/editor-workspace.md) · [편집·AI 요청·전달](references/editing-and-handoff.md) · [참여 서버 실행·권한·운영 경계](references/participation-runtime.md) · [이전 버전에서 이동](references/migration.md) · [구현 범위와 남은 기능](references/implementation-status.md)
 
 ## 브랜드와 글꼴
 

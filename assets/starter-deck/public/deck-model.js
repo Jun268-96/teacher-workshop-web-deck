@@ -16,7 +16,8 @@
       const keys = new Set();
       for (const o of p.objects) {
         checkId(o.id); if (typeof o.key !== 'string' || !/^[\w-]{1,100}$/.test(o.key) || keys.has(o.key)) throw Error('오브젝트 키가 올바르지 않습니다.'); keys.add(o.key);
-        if (!['text','image','youtube','block'].includes(o.type) || typeof o.content !== 'string' || o.content.length > 3000000 || typeof o.deleted !== 'boolean') throw Error('오브젝트 데이터가 올바르지 않습니다.');
+        if (!['text','image','youtube','block','scene'].includes(o.type) || typeof o.content !== 'string' || o.content.length > 3000000 || typeof o.deleted !== 'boolean') throw Error('오브젝트 데이터가 올바르지 않습니다.');
+        if (o.type === 'scene') { if(!window.WorkshopScenes)throw Error('장면 런타임이 필요합니다.');window.WorkshopScenes.parse(o.content); }
         if (o.type === 'image' && !safeImage(o.content)) throw Error('PNG/JPEG/WebP 또는 프로젝트 assets/ 이미지만 가능합니다.');
         if (o.type === 'youtube' && !youtube(o.content)) throw Error('유효한 YouTube 주소가 필요합니다.');
         const s = o.style;

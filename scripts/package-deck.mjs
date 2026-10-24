@@ -24,7 +24,7 @@ if(args.includes('--project'))try{
  for(const name of ['package.json','wrangler.json','qa/flows.json'])try{entries.push([name,await fs.readFile(path.join(root,name))]);}catch(e){if(e.code!=='ENOENT')throw e;}
  // Optional browser-exported edit/request data lives outside public/.
  if(args.includes('--edit')){const data=JSON.parse(await fs.readFile(path.resolve(value('--edit')),'utf8'));if(data.format!=='workshop-edit/v1')throw Error('Expected a workshop-edit/v1 file.');entries.push(['edits/workshop-edit.json',Buffer.from(JSON.stringify(data,null,2))]);}
- entries.push(['HANDOFF.txt',Buffer.from('원본 소스 묶음입니다. public/index.html은 기본 발표자료입니다. edits/workshop-edit.json이 있으면 원본을 로컬 HTTP 서버로 연 뒤 편집 > 저장·전달 > 편집본 불러오기로 반영하세요. 새 대화에는 소스와 수정 요청 파일을 함께 전달하세요. 발표 노트는 --include-notes를 지정한 경우에만 포함됩니다. 비밀 키와 실제 참여 기록은 제외됩니다.\n')]);
+ entries.push(['HANDOFF.txt',Buffer.from('원본 소스 묶음입니다. public/index.html은 기본 발표자료입니다. edits/workshop-edit.json이 있으면 원본을 로컬 HTTP 서버로 연 뒤 편집 > 파일 > 편집본 불러오기로 반영하세요. 새 대화에는 소스와 수정 요청 파일을 함께 전달하세요. 발표 노트는 --include-notes를 지정한 경우에만 포함됩니다. 비밀 키와 실제 참여 기록은 제외됩니다.\n')]);
  for(const [name,data]of entries)if(/\.(json|js|html|md|txt)$/.test(name)&&/(sk-or-v1-[\da-z]{20,}|sk-[\da-zA-Z_-]{30,}|-----BEGIN .*PRIVATE KEY)/.test(data.toString()))throw Error(`Possible credential in ${name}; omitted value`);
  await fs.writeFile(dest,zipStored(entries),{flag:'wx'});console.log(JSON.stringify({source:dest,files:entries.length,notesIncluded:args.includes('--include-notes'),deployed:false},null,2));
 }catch(e){console.error(e.message);process.exitCode=1;}
