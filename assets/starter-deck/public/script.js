@@ -7,7 +7,7 @@
   const next = document.querySelector('[data-next]');
   const toggle = document.querySelector('#toc-toggle');
   const contents = document.querySelector('#contents');
-  let index = 0;
+  let index = 0, tocOpenedByHover = false;
   const safeLink = value => {
     try { const url = new URL(value, location.href); return ['https:', 'http:', 'file:'].includes(url.protocol) ? url.href : null; }
     catch { return null; }
@@ -18,7 +18,7 @@
   document.querySelectorAll('[data-mascots]:not(body)').forEach(el => { el.hidden = config.modules?.mascots !== true; });
   document.body.dataset.mascots = config.modules?.mascots === true ? 'on' : 'off';
   document.title = config.title || document.title;
-  function setToc(open) { contents.hidden = !open; toggle.setAttribute('aria-expanded', String(open)); }
+  function setToc(open) { if(!open)tocOpenedByHover=false;contents.hidden = !open; toggle.setAttribute('aria-expanded', String(open)); }
   function fromHash() { try { return slides.findIndex(s => s.id === decodeURIComponent(location.hash.slice(1))); } catch { return -1; } }
   function showSlide(position, updateHash = true) {
     index = Math.max(0, Math.min(position, slides.length - 1));
@@ -50,9 +50,9 @@
     if(explain) {const dialog=document.createElement('dialog'),text=document.createElement('p'),close=document.createElement('button');text.textContent=explain.dataset.explain;close.textContent='닫기';close.onclick=()=>dialog.close();dialog.append(text,close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();}
   });
   deck.addEventListener('keydown',e=>{if(!document.body.classList.contains('is-editing')&&['Enter',' '].includes(e.key)&&e.target.matches('[data-explain]')){e.preventDefault();e.target.click();}});
-  toggle.addEventListener('click', () => setToc(contents.hidden));
+  toggle.addEventListener('click', event => {const open=tocOpenedByHover&&event.detail>0?true:contents.hidden;tocOpenedByHover=false;setToc(open);});
   const tocAnchor = document.querySelector('.toc-anchor');
-  tocAnchor.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') setToc(true); });
+  tocAnchor.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') {setToc(true);tocOpenedByHover=true;} });
   tocAnchor.addEventListener('pointerleave', () => { if (!tocAnchor.contains(document.activeElement)) setToc(false); });
   tocAnchor.addEventListener('focusout', event => { if (!tocAnchor.contains(event.relatedTarget)) setToc(false); });
   document.addEventListener('pointerdown', event => { if (!tocAnchor.contains(event.target)) setToc(false); });
@@ -134,5 +134,7 @@
     go:id=>{const i=slides.findIndex(s=>s.id===id);if(i>=0)showSlide(i);},
     refresh:id=>{slides=[...deck.querySelectorAll(':scope > .slide')];rebuildToc();initialiseTabs();showSlide(Math.max(0,slides.findIndex(s=>s.id===id)));}
   };
-  showSlide(Math.max(0, fromHash()));
+  const initialIndex=fromHash();
+  // A saved editor page may not exist in the base HTML yet. Let the editor restore it.
+  showSlide(Math.max(0,initialIndex),initialIndex>=0||!location.hash);
 })();

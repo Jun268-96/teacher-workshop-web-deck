@@ -3,6 +3,7 @@
   const M = window.WorkshopModel, api = window.WorkshopDeck;
   if (!M || !api || new URLSearchParams(location.search).get('present') === '1') return;
   const $ = s => document.querySelector(s), clone = M.clone;
+  let initialPage;try{initialPage=decodeURIComponent(location.hash.slice(1));}catch{initialPage=null;}
   function readText(el){const copy=el.cloneNode(true);copy.querySelectorAll('br').forEach(n=>n.replaceWith('\n'));return copy.textContent;}
   const baseDOM = $('#deck').cloneNode(true), bases = new Map(), seed = [];
   baseDOM.querySelectorAll(':scope > .slide').forEach(page => {
@@ -44,7 +45,7 @@
   }
   function mutate(fn) { const next=clone(doc);fn(next);publish(next); }
   function render() {
-    const old = api.currentId(), tabs=[...$('#deck').querySelectorAll('[role=tab][aria-selected=true]')].map(n=>[n.closest('.slide').id,n.dataset.tab]), inputs=[...$('#deck').querySelectorAll('input,textarea,select')].map(n=>[n.closest('.slide').id,n.dataset.runtimeId||n.id,n.value]); $('#deck').replaceChildren();
+    const old = doc.pages.some(p=>p.id===initialPage)?initialPage:api.currentId(), tabs=[...$('#deck').querySelectorAll('[role=tab][aria-selected=true]')].map(n=>[n.closest('.slide').id,n.dataset.tab]), inputs=[...$('#deck').querySelectorAll('input,textarea,select')].map(n=>[n.closest('.slide').id,n.dataset.runtimeId||n.id,n.value]); $('#deck').replaceChildren();initialPage=null;
     for (const p of doc.pages) {
       const source=bases.get(p.template), el=source ? source.cloneNode(true) : document.createElement('section');
       const idMap=new Map(); el.querySelectorAll('[id]').forEach(n=> { const id=p.id===p.template?n.id:`${p.id}-${n.id}`;idMap.set(n.id,id);n.dataset.runtimeId=n.dataset.runtimeId||n.id;n.id=id; });
