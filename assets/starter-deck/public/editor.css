@@ -18,6 +18,7 @@ body.is-editing .edit-resizable{outline:none!important}#edit-resize-frame{positi
 body.is-editing #deck{background:var(--paper)}
 #editor-scene-preview .scene-button{background:var(--editor-accent);color:white;padding:8px 18px;min-height:36px}#editor-scene-preview .scene-button:hover{background:#32482d}
 #workshop-editor #editor-panel{z-index:80}
+#editor-context #editor-quick-weight{width:64px;min-height:30px;padding:3px 5px;margin:0;border:0;background:transparent;font:12px var(--sans)}
 #queue-annotation-help,#queue-inbox-help{font-size:12px;color:var(--editor-muted);margin:8px 0 16px}
 #workshop-editor #queue-inbox-button{background:var(--editor-accent);color:#fff}
 #workshop-editor #queue-annotation-button,#workshop-editor [data-action=share-annotation]{background:var(--editor-accent);color:#fff}

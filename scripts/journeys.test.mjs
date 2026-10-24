@@ -1,4 +1,4 @@
-import {action,panel as section,selectObject,selectPage} from './editor-test-helpers.mjs';
+import {action,panel as section,selectObject,selectPage,editText,quickSize} from './editor-test-helpers.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -48,7 +48,7 @@ e2e('UI duplicate pages media behavior and portable presentation',async t=>{
 });
 
 e2e('UI phone selection editing page changes and keyboard guard',async t=>{
- const {server,client}=await setup(t,{phone:true}),{page:p}=await client('phone');await editMode(p,server.url);await p.locator('#cover-title').tap();await section(p,'직접 수정');await section(p,'direct');await p.locator('#object-content').fill('휴대폰에서 고친 제목');await p.locator('#object-content').press('ArrowRight');assert.equal(new URL(p.url()).hash,'#start');await action(p,'object-save');await selectPage(p,'message');await p.locator('#message-title').tap();await section(p,'request');await p.locator('#change-request').fill('휴대폰에서 저장한 요청');await action(p,'queue-add');assert.equal(await p.locator('#request-list li').count(),1);await shot(p,'phone-edit-ui');await action(p,'done');assert.equal(await p.locator('#workshop-editor').isHidden(),true);await p.locator('[data-next]').tap();assert.equal(new URL(p.url()).hash,'#compare');await p.locator('#toc-toggle').tap();await p.locator('#contents button').last().tap();assert.equal(new URL(p.url()).hash,'#closing');
+ const {server,client}=await setup(t,{phone:true}),{page:p}=await client('phone');await editMode(p,server.url);await p.locator('#cover-title').tap();const editable=await editText(p,'휴대폰에서 고친 제목',{commit:false});await editable.press('ArrowRight');assert.equal(new URL(p.url()).hash,'#start');await p.locator('#editor-current-page').click();await selectPage(p,'message');await p.locator('#message-title').tap();await section(p,'request');await p.locator('#change-request').fill('휴대폰에서 저장한 요청');await action(p,'queue-add');assert.equal(await p.locator('#request-list li').count(),1);await shot(p,'phone-edit-ui');await action(p,'done');assert.equal(await p.locator('#workshop-editor').isHidden(),true);await p.locator('[data-next]').tap();assert.equal(new URL(p.url()).hash,'#compare');await p.locator('#toc-toggle').tap();await p.locator('#contents button').last().tap();assert.equal(new URL(p.url()).hash,'#closing');
 });
 
 e2e('UI five live blocks moderation reconnect exports end and reset',async t=>{

@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process';
 import http from 'node:http';
 import {openInbox} from '../assets/starter-deck/server/editor-inbox.mjs';
 import {serve,loadPlaywright,resolveTool} from '../assets/starter-deck/harness/lib.mjs';
-import {panel,selectObject,selectPage,action} from './editor-test-helpers.mjs';
+import {panel,selectObject,selectPage,action,editText} from './editor-test-helpers.mjs';
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),starter=path.join(repo,'assets/starter-deck');
 const ui=(name,fn)=>test(name,{skip:!resolveTool(starter,'playwright')&&'Playwright unavailable'},fn);
 async function shot(p,name){if(process.env.WORKSHOP_INBOX_OUTPUT){await fs.mkdir(process.env.WORKSHOP_INBOX_OUTPUT,{recursive:true});await p.screenshot({path:path.join(process.env.WORKSHOP_INBOX_OUTPUT,name+'.png')});}}
@@ -51,7 +51,7 @@ async function request(p,id,text){await selectObject(p,id);await panel(p,'reques
 async function submit(p){await panel(p,'queue');await p.locator('#queue-inbox-button').click();await p.waitForFunction(()=>document.querySelector('#queue-inbox-help').textContent.startsWith('프로젝트 요청함에 저장됨'));}
 
 ui('no annotation API or clipboard: real browser save -> disk -> agent CLI -> preview/cancel/accept -> status and undo',async t=>{
- const {root,p}=await edit(t);assert.equal(await p.evaluate(()=>typeof document.oai?.annotation?.request),'undefined');await selectObject(p,'start-title');await panel(p,'direct');await p.locator('#object-content').fill('브라우저에서 이미 고친 제목');await action(p,'object-save');
+ const {root,p}=await edit(t);assert.equal(await p.evaluate(()=>typeof document.oai?.annotation?.request),'undefined');await selectObject(p,'start-title');await editText(p,'브라우저에서 이미 고친 제목');
  const buffer=await p.screenshot({clip:{x:0,y:0,width:120,height:80}}),chooser=p.waitForEvent('filechooser');await action(p,'add-image');await(await chooser).setFiles({name:'local.png',mimeType:'image/png',buffer});await p.locator('#deck img[data-added]').waitFor();
  await request(p,'start-title','제목만 간단하게 바꿔줘');await selectPage(p,'demo');await request(p,'demo-heading','크기만 키워줘');const doc=await p.evaluate(()=>WorkshopEditor.document),requests=await p.evaluate(()=>WorkshopEditor.requests);await submit(p);await shot(p,'01-project-inbox');
  const store=await openInbox(root),listed=command(root,['list']);assert.equal(listed.status,0,listed.stderr);const list=JSON.parse(listed.stdout);assert.equal(list.length,1);const id=list[0].id,{batch}=await store.read(id);assert.deepEqual(batch.document,doc);assert.deepEqual(batch.requests,requests);assert.ok(batch.document.pages[0].objects.some(o=>o.type==='image'&&o.content.startsWith('data:image/')));

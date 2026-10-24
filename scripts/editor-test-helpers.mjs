@@ -10,6 +10,15 @@ export async function panel(p,name){
 }
 export async function selectPage(p,id){if(await p.locator('#editor-panel').isVisible())await p.locator('[data-ui-action=close]').click();await p.locator(`[data-editor-page="${id}"]`).click();}
 export async function selectObject(p,id){await panel(p,'objects');await p.locator('#object-list').selectOption(id);}
+export async function editText(p,value,{commit=true}={}){
+ if(await p.locator('#editor-panel').isVisible())await p.locator('[data-ui-action=close]').click();
+ const id=await p.locator('#object-list').inputValue(),node=p.locator(`#deck [data-object-id="${id}"]`);
+ await node.dblclick();await node.fill(value);if(commit)await p.locator('#editor-current-page').click();return node;
+}
+export async function quickSize(p,value){
+ if(await p.locator('#editor-panel').isVisible())await p.locator('[data-ui-action=close]').click();
+ await p.locator('#editor-quick-size').fill(String(value));await p.locator('#editor-quick-size').press('Tab');
+}
 const panels={'page-save':'page','page-add':'page','page-copy':'page','page-delete':'page','page-up':'page','page-down':'page','object-save':'direct','behavior-save':'behavior','queue-add':'request','annotation':'request','copy':'queue','requests-export':'queue','export':'files','import':'files','presentation':'files','patch':'files','done':'files'};
 export async function action(p,name){
  if(['add-text','add-image','add-video'].includes(name)){
