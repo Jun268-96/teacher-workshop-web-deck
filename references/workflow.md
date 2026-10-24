@@ -54,6 +54,8 @@ Do not visually disguise a case slot as a completed example. Research a suitable
 
 ## Time design
 
+First distinguish source timing from a confirmed requirement for this task using [time-and-scope.md](time-and-scope.md). If duration is unconfirmed, keep it unspecified: propose content, interactions and completion criteria without an invented total or deadline. Do not compress activities to fit a source deck's old timer. An estimated range is a proposal, not confirmation.
+
 Reserve time for actions rather than filling all available minutes with explanation. For hands-on work, record the participant artifact, success criteria, approximate work time, checkpoints, recovery path, and feedback/application step. Account for tool installation/login, waiting, questions, and breaks; check the total against the confirmed session length. Do not silently borrow time from practice to cover an oversized lecture. Mark each section as essential, optional, or removable. A long workshop needs planned recovery points; a short workshop needs one complete outcome rather than a tour of every feature.
 
 ## Approval boundary

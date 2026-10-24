@@ -105,7 +105,8 @@ export async function verifyBrowser(root,url,{publicRun=false,expectedBuild}={})
       await page.locator('#timer-toggle').hover(); await page.locator('#timer-start').click();
       await page.waitForTimeout(1100); await page.locator('#timer-reset').click();
       const config=await page.evaluate(()=>window.WORKSHOP_CONFIG);
-      const expected=`${config.durationMinutes}:00`;
+      const timerSeconds=Math.ceil(Number(config.durationMinutes)*60);
+      const expected=`${Math.floor(timerSeconds/60)}:${String(timerSeconds%60).padStart(2,'0')}`;
       if(await page.locator('#timer-output').textContent()!==expected) fail('Timer reset failed'); else record('timer start and reset');
     }
     await page.locator('#deck').click({position:{x:700,y:150}}); await page.keyboard.press('f');

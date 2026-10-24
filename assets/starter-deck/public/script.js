@@ -32,7 +32,10 @@
   document.querySelectorAll('[data-logo]').forEach(el => { const enabled=Boolean(config.logo&&safeLink(config.logo));el.hidden=!enabled;if(enabled&&!el.src.startsWith('data:'))el.src=config.logo;el.alt=enabled?(config.logoAlt||''):''; });
   document.querySelectorAll('[data-brand-slot][data-config="host"]').forEach(el=>{el.textContent=config.host||'';el.hidden=!el.textContent.trim();});
   document.querySelectorAll('.cover-brand').forEach(el=>el.hidden=![...el.children].some(n=>!n.hidden));
-  document.querySelectorAll('[data-duration]').forEach(el => { el.textContent = config.durationMinutes || 15; });
+  const configuredMinutes = Number(config.durationMinutes);
+  const hasDuration = Number.isFinite(configuredMinutes) && configuredMinutes > 0;
+  document.querySelectorAll('[data-duration]').forEach(el => { el.textContent = hasDuration ? String(configuredMinutes) : ''; });
+  document.querySelectorAll('[data-duration-label]').forEach(el => { el.hidden = !hasDuration; });
   document.querySelectorAll('[data-mascots]:not(body)').forEach(el => { el.hidden = config.modules?.mascots !== true; });
   document.body.dataset.mascots = config.modules?.mascots === true ? 'on' : 'off';
   document.title = config.title || document.title;
@@ -122,9 +125,9 @@
     heading.dataset.editKey=card.dataset.editKey+'-title';description.dataset.editKey=card.dataset.editKey+'-description';heading.textContent = item.title; description.textContent = item.description || ''; copy.append(heading, description); card.append(copy); resources?.append(card);
   });
   const timer = document.querySelector('[data-timer]');
-  if (timer && config.modules?.timer) {
+  if (timer && config.modules?.timer && hasDuration) {
     timer.hidden = false;
-    const duration = Math.max(1, Number(config.durationMinutes) || 15) * 60000;
+    const duration = configuredMinutes * 60000;
     const storageKey = `workshop-timer:${config.deckId || 'deck'}`;
     let state = { remaining: duration, deadline: null };
     try { const cached = JSON.parse(sessionStorage.getItem(storageKey)); if (cached && Number.isFinite(cached.remaining) && (cached.deadline === null || Number.isFinite(cached.deadline))) state = cached; } catch { /* file and privacy modes may deny storage */ }
