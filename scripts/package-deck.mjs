@@ -21,7 +21,7 @@ if(args.includes('--project'))try{
    entries.push([rel,await fs.readFile(file)]);
   }}catch(e){if(e.code!=='ENOENT')throw e;}
  }
- for(const name of ['package.json','wrangler.json','qa/flows.json'])try{entries.push([name,await fs.readFile(path.join(root,name))]);}catch(e){if(e.code!=='ENOENT')throw e;}
+ for(const name of ['package.json','wrangler.json','qa/flows.json','AGENTS.md','CLAUDE.md','.gitignore','workshop/editor-inbox.md'])try{if(!entries.some(([entry])=>entry===name))entries.push([name,await fs.readFile(path.join(root,name))]);}catch(e){if(e.code!=='ENOENT')throw e;}
  // Optional browser-exported edit/request data lives outside public/.
  if(args.includes('--edit')){const data=JSON.parse(await fs.readFile(path.resolve(value('--edit')),'utf8'));if(data.format!=='workshop-edit/v1')throw Error('Expected a workshop-edit/v1 file.');entries.push(['edits/workshop-edit.json',Buffer.from(JSON.stringify(data,null,2))]);}
  entries.push(['HANDOFF.txt',Buffer.from('원본 소스 묶음입니다. public/index.html은 기본 발표자료입니다. edits/workshop-edit.json이 있으면 원본을 로컬 HTTP 서버로 연 뒤 편집 > 파일 > 편집본 불러오기로 반영하세요. 새 대화에는 소스와 수정 요청 파일을 함께 전달하세요. 발표 노트는 --include-notes를 지정한 경우에만 포함됩니다. 비밀 키와 실제 참여 기록은 제외됩니다.\n')]);

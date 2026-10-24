@@ -6,4 +6,5 @@ public/build.json
 qa/public-visual-review.json
 
 .workshop-data/
+.workshop-editor/
 *.workshop-edit.json

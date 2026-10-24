@@ -23,6 +23,10 @@ node harness/harness.mjs setup --tool deploy --consent install-deploy
 
 이미 제공된 의존성을 재사용하려면 `WORKSHOP_PLAYWRIGHT_MODULE`에 Playwright 모듈 진입 파일, `WORKSHOP_WRANGLER_CLI`에 Wrangler CLI JS 파일의 경로를 환경변수로 전달할 수 있다. 경로는 현재 환경에서 확인하고 배포 파일/공유 스킬에 개인 절대 경로를 하드코딩하지 않는다.
 
+## 로컬 편집 요청함
+
+Node 22 이상이 있으면 `npm run dev`만으로 로컬 요청함을 쓸 수 있다. 추가 패키지·Playwright·Wrangler·계정·AI API 키는 이 전달 경로의 요건이 아니다. 브라우저 수정 요청을 같은 프로젝트 폴더에 저장하고 파일 접근 에이전트가 읽는다. 별도 Python 정적 서버에는 이 API가 없으므로 표준 개발 서버로 실행한다. [로컬 요청함](local-editor-inbox.md)에서 사용법과 실제 검증 경계를 확인한다. 127.0.0.1 전용 서버를 외부에 노출하지 않으며, 공개 정적 배포에는 요청함이 포함되지 않는다.
+
 ## 계정 연결
 
 도구 설치와 계정 가입은 다르다. 대상 계정이 없으면 사용자가 브라우저에서 Cloudflare에 가입·로그인하도록 안내한다. 비밀번호/OTP/API 키를 채팅으로 받지 않는다. 로그인은 사용자 동작이며 설치 허용으로 대신하지 않는다.

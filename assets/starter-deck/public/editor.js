@@ -15,6 +15,8 @@
   let panelPage = '', doc = clone(initial), undo = [], redo = [], queue = [], selected = null, editing = false, behaviorPreview = false, pending = null, storageOK = true;
   function validRequests(value) { if(!Array.isArray(value))throw Error('요청 목록이 올바르지 않습니다.'); return value.slice(0,100).map(r=>{if(typeof r.id!=='string'||typeof r.request!=='string'||r.request.length>10000||!r.context?.page?.id||!r.context?.object?.id||typeof r.context.page.title!=='string')throw Error('요청 항목이 올바르지 않습니다.');return clone(r);}); }
   const key = `workshop-editor:v1:${doc.deckId}`;
+  let inboxConnection=null,inboxSaved=null,inboxBusy=false;
+  try{const saved=JSON.parse(localStorage.getItem(key+':inbox'));if(/^batch-[a-f0-9]{64}$/.test(saved?.id))inboxSaved=saved;}catch{}
   try { const saved = JSON.parse(localStorage.getItem(key)); if (saved) { doc = M.validate(saved.document,bases); queue = validRequests(saved.requests); } } catch { storageOK = false; }
   const root = document.createElement('aside'); root.id = 'workshop-editor'; root.dataset.editorUi = ''; root.hidden = new URLSearchParams(location.search).get('edit') !== '1';
   root.innerHTML = `<button id="edit-toggle" type="button" aria-pressed="false">편집</button>
@@ -31,7 +33,7 @@
       <div class="edit-row"><button data-action="object-save">직접 수정 적용</button><button data-action="image-replace">사진 교체</button><button data-action="object-delete">삭제</button></div>
       </details><details><summary>동작 추가·변경</summary><label>호버 설명<input id="object-tooltip" maxlength="2000"></label><label>클릭 설명<textarea id="object-explain" rows="2"></textarea></label><button data-action="behavior-save">동작 적용</button></details>
       </section>
-    <details id="queue-details"><summary>수정 요청 <span id="queue-count">0</span>개</summary><button type="button" data-action="queue-annotation" id="queue-annotation-button" hidden>모두 ChatGPT 주석으로 보내기</button><p id="queue-annotation-help"></p><ol id="request-list"></ol><button data-action="copy">요청 전체 복사</button><button data-action="requests-export">요청 파일 저장</button><label>복사가 막혔을 때<textarea id="batch-copy" readonly rows="4"></textarea></label></details>
+    <details id="queue-details"><summary>수정 요청 <span id="queue-count">0</span>개</summary><button type="button" data-action="queue-inbox" id="queue-inbox-button" hidden>프로젝트 요청함에 저장</button><button type="button" data-action="inbox-result" id="inbox-result-button" hidden>변경안 확인</button><p id="queue-inbox-help" role="status"></p><button type="button" data-action="queue-annotation" id="queue-annotation-button" hidden>모두 ChatGPT 주석으로 보내기</button><p id="queue-annotation-help"></p><ol id="request-list"></ol><button data-action="copy">요청 전체 복사</button><button data-action="requests-export">요청 파일 저장</button><label>복사가 막혔을 때<textarea id="batch-copy" readonly rows="4"></textarea></label></details>
     <details><summary>저장·전달</summary><p>편집본에는 발표 노트가 포함됩니다. 새 대화에는 편집본과 원본 소스도 함께 전달하세요.</p><div class="edit-row"><button data-action="export">편집본 저장</button><button data-action="import">편집본 불러오기</button><button data-action="presentation">발표용 HTML 저장</button><button data-action="patch">AI 변경안 불러오기</button></div><p id="impact-state"></p></details>
   </section><input id="edit-file" type="file" hidden><dialog id="patch-dialog"><h2>변경안 미리보기</h2><label>확인할 페이지<select id="preview-page"></select></label><pre></pre><p>내용·대본·시간 배분을 확인한 뒤 확정하세요.</p><button data-action="patch-accept">확정</button><button data-action="patch-cancel">취소</button></dialog>`;
   document.body.append(root);
@@ -120,11 +122,39 @@
     $('#direct-tools [data-action="image-replace"]').hidden=o.type!=='image';
   }
   function setBehaviorPreview(on){behaviorPreview=on&&editing;hideGuides();document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'동작 시험 중 · 화면에서 호버하거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 모서리로 크기를 조절하세요. 더블클릭하면 글자를 수정합니다.';api.hideTooltip?.();syncResizeFrame();ui?.refresh();}
-  function setEditing(on) { editing=on;if(!on)shareDialog.close();setBehaviorPreview(false);panelPage=api.currentId();document.body.classList.toggle('is-editing',on);$('#edit-tools').hidden=!on;$('#edit-toggle').setAttribute('aria-pressed',String(on));$('#edit-toggle').textContent=on?'편집 중':'편집';api.layoutMoved?.();renderPanel();highlight();ui?.layout(); }
+  function setEditing(on) { editing=on;if(!on)shareDialog.close();else if(!inboxConnection)connectInbox();setBehaviorPreview(false);panelPage=api.currentId();document.body.classList.toggle('is-editing',on);$('#edit-tools').hidden=!on;$('#edit-toggle').setAttribute('aria-pressed',String(on));$('#edit-toggle').textContent=on?'편집 중':'편집';api.layoutMoved?.();renderPanel();highlight();ui?.layout(); }
   function choose(id) { selected=id;renderPanel();highlight(); }
   function download(name,content,type='application/json') {const a=document.createElement('a');const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function batch() {return JSON.stringify({format:'workshop-change-requests/v1',deckId:doc.deckId,baseRevision:doc.revision,instructions:'각 요청 context.revision은 수집 당시 상태입니다. 첨부 편집본의 현재 버전과 내용이 달라졌다면 충돌을 확인하세요. 정확한 page.id/object.id로 수정하세요. 요청 외 대상과 기존 동작을 보존하세요. 첨부 편집본+원본 소스가 필요합니다. JSON 패치는 {deckId,baseRevision,changes:[{pageId,objectId,set:{content,style,behavior}}],pageUpdates:[{pageId,notes,seconds}]} 형식입니다. 지원하지 않는 코드 변경은 별도 소스 차이로 전달하고 검증하세요.',requests:queue},null,2);}
   function annotationAvailable(){return typeof document.oai?.annotation?.request==='function';}
+  function inboxControls(){
+    $('#queue-inbox-button').hidden=!inboxConnection;$('#queue-inbox-button').disabled=inboxBusy||!queue.length;
+    $('#inbox-result-button').hidden=!inboxConnection||!inboxSaved;$('#inbox-result-button').disabled=inboxBusy;
+  }
+  async function connectInbox(){
+    if(!['127.0.0.1','localhost'].includes(location.hostname)){inboxHelp('프로젝트 요청함은 npm run dev로 연 로컬 편집기에서 사용할 수 있습니다.');return false;}
+    try{const res=await fetch('/api/editor-inbox',{cache:'no-store',signal:AbortSignal.timeout(5000)}),data=res.ok?await res.json():null;if(!data?.available||data.deckId!==doc.deckId||typeof data.token!=='string')throw Error();inboxConnection=data;inboxControls();inboxHelp(inboxSaved?'저장한 요청함이 있습니다. 에이전트가 작업한 뒤 변경안을 확인하세요.':'같은 프로젝트에서 작업하는 Claude Code·Codex가 읽을 수 있습니다.');return true;}
+    catch{inboxConnection=null;inboxControls();inboxHelp('프로젝트 요청함을 쓰려면 이 프로젝트에서 npm run dev로 미리보기를 여세요.');return false;}
+  }
+  function inboxHelp(message){$('#queue-inbox-help').textContent=message;}
+  async function inboxFetch(route,body){
+    if(!inboxConnection&&!await connectInbox())throw Error('로컬 요청함에 연결하지 못했습니다.');
+    const res=await fetch('/api/editor-inbox'+route,{method:body===undefined?'GET':'POST',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'x-workshop-editor-token':inboxConnection.token,...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
+    const data=await res.json();if(!res.ok){if(res.status===403){inboxConnection=null;await connectInbox();}throw Error(data.error||'요청함 저장에 실패했습니다.');}return data;
+  }
+  async function saveInbox(){
+    if(inboxBusy)return;if(!queue.length)throw Error('먼저 수정 요청을 목록에 추가해 주세요.');
+    inboxBusy=true;inboxControls();const payload={format:'workshop-editor-inbox/v1',document:clone(doc),requests:clone(queue)};
+    try{const saved=await inboxFetch('/batches',payload);inboxSaved={id:saved.id,location:saved.location};try{localStorage.setItem(key+':inbox',JSON.stringify(inboxSaved));}catch{}
+      inboxHelp(`프로젝트 요청함에 저장됨${saved.duplicate?' · 같은 편집본과 요청은 중복 저장하지 않았습니다.':''} · 에이전트에게 “요청함 확인해서 반영해줘”라고 말씀해 주세요. 자동 실행되지는 않습니다.`);status('프로젝트 요청함에 저장됨 · 요청 목록과 편집본은 보존됩니다.');
+    }catch(e){inboxHelp('저장하지 못했습니다. 요청 목록과 편집본은 이 브라우저에 남아 있습니다. '+e.message);status('요청함 저장 실패 · 연결을 확인한 뒤 다시 눌러 주세요.');}
+    finally{inboxBusy=false;inboxControls();}
+  }
+  async function inboxResult(){
+    if(inboxBusy||!inboxSaved)return;inboxBusy=true;inboxControls();
+    try{const result=await inboxFetch('/batches/'+inboxSaved.id);if(result.status.state==='ready'&&result.patch){previewPatch(result.patch);pending.inboxId=inboxSaved.id;}else inboxHelp(({pending:'아직 에이전트 작업 전입니다.',working:'에이전트가 작업 중입니다.',done:'이미 처리한 요청입니다.',blocked:'에이전트가 확인을 요청했습니다.'}[result.status.state]||'요청함 상태 확인')+' '+(result.status.note||''));}
+    catch(e){inboxHelp(e.message);status(e.message);}finally{inboxBusy=false;inboxControls();}
+  }
   function shareState(message){$('#request-share-state').textContent=message;status(message);}
   function renderShare(){
     const part=shareIndex+1,total=shareParts.length;
@@ -149,7 +179,7 @@
     for(let start=0;start<text.length;){let end=Math.min(start+18000,text.length);if(end<text.length&&/[\uD800-\uDBFF]/.test(text[end-1]))end--;shareParts.push(text.slice(start,end));start=end;}
     ui?.close();renderShare();if(!shareDialog.open)shareDialog.show();requestShareAnnotation();
   }
-  function renderQueue() {$('#queue-count').textContent=queue.length;$('#queue-annotation-button').disabled=!queue.length;$('#request-list').replaceChildren();for(const r of queue){const li=document.createElement('li'),label=document.createElement('p'),input=document.createElement('textarea'),remove=document.createElement('button');label.textContent=`${r.context.page.title} · ${{text:'글자',image:'사진',youtube:'영상',block:'화면 블록',scene:'장면'}[r.context.object.type]||'선택 요소'}`;input.value=r.request;input.setAttribute('aria-label','저장된 수정 요청');input.addEventListener('change',()=>{r.request=input.value;persist();$('#batch-copy').value=batch();});remove.textContent='이 요청 삭제';remove.type='button';remove.addEventListener('click',()=>{queue=queue.filter(x=>x.id!==r.id);persist();renderQueue();});li.append(label,input,remove);$('#request-list').append(li);}$('#batch-copy').value=batch();ui?.refresh();}
+  function renderQueue() {$('#queue-count').textContent=queue.length;$('#queue-annotation-button').disabled=!queue.length;inboxControls();$('#request-list').replaceChildren();for(const r of queue){const li=document.createElement('li'),label=document.createElement('p'),input=document.createElement('textarea'),remove=document.createElement('button');label.textContent=`${r.context.page.title} · ${{text:'글자',image:'사진',youtube:'영상',block:'화면 블록',scene:'장면'}[r.context.object.type]||'선택 요소'}`;input.value=r.request;input.setAttribute('aria-label','저장된 수정 요청');input.addEventListener('change',()=>{r.request=input.value;persist();$('#batch-copy').value=batch();});remove.textContent='이 요청 삭제';remove.type='button';remove.addEventListener('click',()=>{queue=queue.filter(x=>x.id!==r.id);persist();renderQueue();});li.append(label,input,remove);$('#request-list').append(li);}$('#batch-copy').value=batch();ui?.refresh();}
   function file(accept,fn) {const input=$('#edit-file');input.accept=accept;input.value='';input.onchange=()=>{if(input.files[0]?.size>16000000){status('파일은 16MB 이하로 줄여 주세요.');return;}if(input.files[0])Promise.resolve(fn(input.files[0])).catch(e=>status(e.message));};input.click();}
   async function image(replace=false) {file('image/png,image/jpeg,image/webp',async f=>{if(f.size>2000000)throw Error('사진은 2MB 이하로 줄여 주세요.');const value=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(f);});if(!M.safeImage(value))throw Error('PNG/JPEG/WebP만 가능합니다.');const o=target();mutate(d=>{const p=d.pages.find(p=>p.id===current().id);if(replace&&o?.type==='image')p.objects.find(x=>x.id===o.id).content=value;else {const added={id:M.uid('obj'),key:M.uid('image'),type:'image',content:value,style:{width:70,height:300},behavior:{},deleted:false};selected=added.id;p.objects.push(added);}});});}
   function previewPatch(patch) {
@@ -157,7 +187,7 @@
     const next=clone(doc), descriptions=[];
     for(const change of patch.changes){const p=next.pages.find(p=>p.id===change.pageId),o=p?.objects.find(o=>o.id===change.objectId&&!o.deleted);if(!o||!change.set||Object.keys(change.set).some(k=>!['content','style','behavior'].includes(k)))throw Error('수정 대상 또는 필드가 올바르지 않습니다.');for(const [k,v]of Object.entries(change.set))o[k]=['style','behavior'].includes(k)?{...o[k],...v}:v;descriptions.push(`${p.title} · ${Object.keys(change.set).map(k=>({content:'내용',style:'배치·스타일',behavior:'동작'}[k])).join(', ')} 변경`);}
     if(patch.pageUpdates!==undefined&&!Array.isArray(patch.pageUpdates))throw Error('발표 노트 변경이 올바르지 않습니다.');for(const update of patch.pageUpdates||[]){const p=next.pages.find(p=>p.id===update.pageId);if(!p||Object.keys(update).some(k=>!['pageId','notes','seconds'].includes(k)))throw Error('페이지 변경이 올바르지 않습니다.');if(update.notes!==undefined)p.notes=update.notes;if(update.seconds!==undefined)p.seconds=update.seconds;descriptions.push(`${p.title}: 노트·시간 검토`);}
-    M.validate(next,bases);ui?.close();pending={next,base:doc.revision};const saved=doc;doc=next;render();doc=saved;$('#preview-page').replaceChildren(...next.pages.filter(p=>patch.changes.some(c=>c.pageId===p.id)||(patch.pageUpdates||[]).some(c=>c.pageId===p.id)).map(p=>new Option(p.title,p.id)));$('#preview-page').value=api.currentId();$('#patch-dialog pre').textContent=descriptions.join('\n')||'변경 없음';$('#patch-dialog').showModal();
+    M.validate(next,bases);ui?.close();pending={next,base:doc.revision};const saved=doc;doc=next;render();doc=saved;$('#preview-page').replaceChildren(...next.pages.filter(p=>patch.changes.some(c=>c.pageId===p.id)||(patch.pageUpdates||[]).some(c=>c.pageId===p.id)).map(p=>new Option(p.title,p.id)));$('#preview-page').value=[...$('#preview-page').options].some(o=>o.value===api.currentId())?api.currentId():$('#preview-page').options[0]?.value||api.currentId();api.go($('#preview-page').value);$('#patch-dialog pre').textContent=descriptions.join('\n')||'변경 없음';$('#patch-dialog').showModal();
   }
   async function portable() {
     const output=document.documentElement.cloneNode(true);output.querySelectorAll('[data-editor-ui],script[src="editor.js"],link[href="editor.css"]').forEach(n=>n.remove());output.querySelector('body').classList.remove('is-editing','is-behavior-preview');output.querySelectorAll('[data-runtime-overlay]').forEach(n=>n.remove());output.querySelectorAll('[data-config]').forEach(n=>n.removeAttribute('data-config'));output.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'));output.querySelectorAll('.edit-selected').forEach(n=>n.classList.remove('edit-selected'));output.querySelectorAll('[data-object-id]').forEach(n=>{n.removeAttribute('oai-annotation-metadata');n.removeAttribute('oai-annotatable');});
@@ -191,6 +221,8 @@
     if(action==='behavior-save'&&o){mutate(d=>{d.pages.find(x=>x.id===p.id).objects.find(x=>x.id===o.id).behavior={tooltip:$('#object-tooltip').value,explain:$('#object-explain').value};});setBehaviorPreview(true);status('동작을 적용했습니다. 화면에서 호버/클릭으로 확인하세요.');}
     if(action==='queue-add'&&o){const request=$('#change-request').value.trim();if(!request)throw Error('변경 요청을 적어 주세요.');queue.push({id:M.uid('request'),request,trigger:$('#request-trigger').value,context:context(p,o)});persist();renderQueue();ui?.refresh();$('#queue-details').open=true;$('#change-request').value='';}
     if(action==='queue-annotation')shareQueue();
+    if(action==='queue-inbox')await saveInbox();
+    if(action==='inbox-result')await inboxResult();
     if(action==='share-annotation')requestShareAnnotation();
     if(action==='share-close')shareDialog.close();
     if(action==='share-prev'||action==='share-next'){shareIndex=Math.max(0,Math.min(shareParts.length-1,shareIndex+(action==='share-next'?1:-1)));renderShare();}
@@ -201,7 +233,7 @@
     if(action==='import')file('.json',async f=>{const data=JSON.parse(await f.text());const next=M.validate(data.document,bases);const requests=validRequests(data.requests);publish(next);queue=requests;persist();renderQueue();});
     if(action==='presentation')await portable();
     if(action==='patch')file('.json',async f=>previewPatch(JSON.parse(await f.text())));
-    if(action==='patch-accept'&&pending){if(pending.base!==doc.revision)throw Error('미리보기 이후 편집본이 바뀌었습니다. 다시 불러오세요.');publish(pending.next);pending=null;$('#patch-dialog').close();$('#impact-state').textContent='AI 변경안 적용됨 · 노트와 시간 배분을 확인하세요.';}
+    if(action==='patch-accept'&&pending){if(pending.base!==doc.revision)throw Error('미리보기 이후 편집본이 바뀌었습니다. 다시 불러오세요.');const inboxId=pending.inboxId;publish(pending.next);pending=null;$('#patch-dialog').close();$('#impact-state').textContent='AI 변경안 적용됨 · 노트와 시간 배분을 확인하세요.';if(inboxId)try{await inboxFetch('/batches/'+inboxId+'/applied',{revision:doc.revision});inboxHelp('변경안을 반영했습니다. 실행 취소로 되돌릴 수 있습니다.');}catch{inboxHelp('변경안은 반영했지만 요청함의 완료 상태를 갱신하지 못했습니다.');}}
     if(action==='patch-cancel'){pending=null;render();$('#patch-dialog').close();}
   }catch(error){status(error.message);}});
   $('#preview-page').addEventListener('change',e=>api.go(e.target.value));

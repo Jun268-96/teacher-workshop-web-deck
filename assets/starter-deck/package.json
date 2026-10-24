@@ -12,6 +12,7 @@
     "verify": "node harness/harness.mjs verify",
     "deploy:check": "node harness/harness.mjs deploy --dry-run",
     "deploy": "node harness/harness.mjs deploy --execute",
-    "live": "node server/live.mjs"
+    "live": "node server/live.mjs",
+    "inbox": "node server/editor-inbox.mjs list"
   }
 }

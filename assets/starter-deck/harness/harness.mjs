@@ -25,7 +25,7 @@ async function main() {
   if(command==='doctor') return print(await doctor(root));
   if(command==='setup') return print(await setup(root,value('--tool'),value('--consent')));
   if(command==='check') { const result=await checkProject(root); print(result); if(!result.passed) process.exitCode=1; return; }
-  if(command==='serve') { const served=await serve(root,Number(value('--port'))||8791); console.log(served.url); return; }
+  if(command==='serve') { const served=await serve(root,Number(value('--port'))||8791,{editorInbox:true}); console.log(`${served.url}\n편집: ${served.url}?edit=1\n로컬 요청함: .workshop-editor/inbox (저장 시 생성, 에이전트 자동 실행 없음)`); return; }
   if(command==='verify') {
     const check=await checkProject(root); if(!check.passed) throw new Error(check.errors.join('; '));
     const target=value('--url');

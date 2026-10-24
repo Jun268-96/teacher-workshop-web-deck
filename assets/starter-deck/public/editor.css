@@ -18,7 +18,8 @@ body.is-editing .edit-resizable{outline:none!important}#edit-resize-frame{positi
 body.is-editing #deck{background:var(--paper)}
 #editor-scene-preview .scene-button{background:var(--editor-accent);color:white;padding:8px 18px;min-height:36px}#editor-scene-preview .scene-button:hover{background:#32482d}
 #workshop-editor #editor-panel{z-index:80}
-#queue-annotation-help{font-size:12px;color:var(--editor-muted);margin:8px 0 16px}
+#queue-annotation-help,#queue-inbox-help{font-size:12px;color:var(--editor-muted);margin:8px 0 16px}
+#workshop-editor #queue-inbox-button{background:var(--editor-accent);color:#fff}
 #workshop-editor #queue-annotation-button,#workshop-editor [data-action=share-annotation]{background:var(--editor-accent);color:#fff}
 #workshop-editor #editor-request-share{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;width:min(780px,calc(100vw - 24px));max-width:calc(100vw - 24px);height:min(700px,calc(100dvh - 30px));max-height:calc(100dvh - 30px);z-index:90;overflow:hidden}
 #editor-request-share[open]{display:flex;flex-direction:column}#editor-request-share>header,#editor-request-share>footer{flex-shrink:0}

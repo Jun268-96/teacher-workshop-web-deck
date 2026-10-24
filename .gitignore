@@ -12,3 +12,4 @@ qa/results/
 qa/visual-review.json
 qa/public-visual-review.json
 public/build.json
+.workshop-editor/

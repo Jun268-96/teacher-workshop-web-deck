@@ -8,6 +8,7 @@ import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { inboxHandler } from '../server/editor-inbox.mjs';
 
 export const versions = { playwright: '1.62.1', wrangler: '4.127.1' };
 export async function exists(file) { try { await fs.access(file); return true; } catch { return false; } }
@@ -98,12 +99,14 @@ export async function checkProject(root) {
   if (/입력하세요|CASE SLOT|TEACHER WORKSHOP/.test(html)) warnings.push('Visible starter instructions may remain; inspect the slide copy.');
   return { passed: errors.length === 0, errors, warnings, fingerprint: await fingerprint(root), files: files.length };
 }
-export async function serve(root, port = 0) {
+export async function serve(root, port = 0, {editorInbox=false} = {}) {
   const publicDir = await fs.realpath(path.join(root,'public'));
+  const inbox=editorInbox?await inboxHandler(root):null;
   const types = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8' };
   const server = http.createServer(async (req,res) => {
     try {
-      const pathname = decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+      const url=new URL(req.url,'http://localhost');if(inbox?.(req,res,url))return;
+      const pathname = decodeURIComponent(url.pathname);
       let file = path.resolve(publicDir,'.'+pathname);
       if (file !== publicDir && !file.startsWith(publicDir+path.sep)) throw new Error('outside');
       if ((await fs.stat(file)).isDirectory()) file = path.join(file,'index.html');
