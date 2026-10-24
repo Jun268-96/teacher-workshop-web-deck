@@ -91,4 +91,6 @@ node --test <skill-dir>/scripts/*.test.mjs
 
 `node --test scripts/movement.test.mjs`는 새 텍스트/기존 제목을 첫 드래그로 240px 옮긴 실제 거리를 측정한다. 다른 요소 보존, 겹침 허용, 실행 취소/다시 실행/새로고침, 휴대폰 경계, 기존 좌표 편집본 가져오기, 동작 적용 직후 호버·클릭 시험, 설명 변경·삭제, 독립 HTML의 동작과 스타일을 확인한다. `WORKSHOP_MOVEMENT_OUTPUT=<private-directory>`로 캡처와 이동 거리 JSON을 남긴다. 저장값만 확인한 검사를 실제 드래그 성공으로 간주하지 않는다.
 
+`node --test scripts/resize.test.mjs`는 네 모서리로 텍스트 박스 크기를 실제로 조절하고 반대 모서리의 위치, 폰트 크기 보존, 실행 취소/재실행/새로고침을 확인한다. 사진 비율 유지, 오프라인 HTML에서 핸들 제거, Escape/터치 취소, 태블릿의 실제 터치 드래그도 검사한다. `WORKSHOP_RESIZE_OUTPUT=<private-directory>`로 캡처를 남긴다. 이동 검사는 모서리가 아닌 박스 안을 잡아 크기 조절과 구분한다.
+
 주석 전송이나 외부 AI의 답변 품질·YouTube 실제 재생·공개 HTTPS 운영·물리 태블릿은 이 로컬 E2E의 증거가 아니다. 그런 연동은 해당 환경에서 별도로 확인한다.

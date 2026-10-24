@@ -1,0 +1,38 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {serve,loadPlaywright,resolveTool} from '../assets/starter-deck/harness/lib.mjs';
+const starter=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../assets/starter-deck'),out=process.env.WORKSHOP_RESIZE_OUTPUT;
+const ui=(name,fn)=>test(name,{skip:!resolveTool(starter,'playwright')&&'Playwright unavailable'},fn);
+async function setup(t,touch=false){
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'workshop-resize-'));await fs.cp(starter,dir,{recursive:true});const server=await serve(dir),{chromium}=await loadPlaywright(dir),browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:touch?{width:1024,height:768}:{width:1440,height:900},hasTouch:touch,reducedMotion:'reduce'}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(8000);
+ t.after(async()=>{await browser.close();await new Promise(r=>server.server.close(r));await fs.rm(dir,{recursive:true,force:true});assert.deepEqual(errors,[]);});await page.goto(server.url+'?edit=1#message');await page.locator('#edit-toggle').click();await page.locator('[data-action=page-add]').evaluate(n=>n.closest('details').open=true);await page.locator('[data-action=page-add]').click();return {page,browser,dir};
+}
+const action=(p,n)=>p.locator(`[data-action="${n}"]`).click(),near=(a,b,label)=>assert.ok(Math.abs(a-b)<2,`${label}: ${a} != ${b}`);
+async function resize(p,corner,dx,dy){const h=p.locator(`[data-resize-corner=${corner}]`),r=await h.boundingBox(),x=r.x+r.width/2,y=r.y+r.height/2;await p.mouse.move(x,y);await p.mouse.down();await p.mouse.move(x+dx,y+dy,{steps:10});await p.mouse.up();}
+async function shot(p,name){if(out){await fs.mkdir(out,{recursive:true});await p.screenshot({path:path.join(out,name+'.png')});}}
+ui('all text corners resize with fixed opposite corner, persist, undo/redo, and keep font size',async t=>{
+ const {page:p}=await setup(t);await action(p,'add-text');const n=p.locator('.slide.active [data-added]').last(),before=await n.boundingBox(),font=await n.evaluate(n=>getComputedStyle(n).fontSize);assert.equal(await p.locator('#edit-resize-frame button').count(),4);
+ await resize(p,'se',200,80);let r=await n.boundingBox();near(r.x,before.x,'left anchor');near(r.y,before.y,'top anchor');near(r.width,before.width+200,'width');near(r.height,before.height+80,'height');assert.equal(await n.evaluate(n=>getComputedStyle(n).fontSize),font);const enlarged=r;
+ await action(p,'undo');near((await n.boundingBox()).width,before.width,'undo');await action(p,'redo');near((await n.boundingBox()).width,enlarged.width,'redo');await p.reload();await p.locator('#edit-toggle').click();near((await n.boundingBox()).width,enlarged.width,'reload width');near((await n.boundingBox()).x,enlarged.x,'reload position');
+ // Reload clears selection; choose via the same object menu a user sees.
+ const id=await n.getAttribute('data-object-id');await p.locator('#object-list').selectOption(id);
+ for(const [corner,dx,dy] of [['nw',30,20],['ne',35,-15],['sw',-25,20]]){const a=await n.boundingBox();await resize(p,corner,dx,dy);r=await n.boundingBox();near(corner.includes('w')?r.x+r.width:r.x,corner.includes('w')?a.x+a.width:a.x,corner+' opposite x');near(corner.includes('n')?r.y+r.height:r.y,corner.includes('n')?a.y+a.height:a.y,corner+' opposite y');}
+ await shot(p,'text-four-corners');
+});
+ui('image corner resize keeps aspect ratio, survives reload and offline export without editor handles',async t=>{
+ const {page:p,browser,dir}=await setup(t);const fixture=await p.screenshot({clip:{x:0,y:0,width:240,height:120}}),chooser=p.waitForEvent('filechooser');await action(p,'add-image');await(await chooser).setFiles({name:'test.png',mimeType:'image/png',buffer:fixture});const n=p.locator('.slide.active img[data-added]');await n.waitFor();await n.evaluate(n=>n.decode());await p.locator('#object-list').selectOption(await n.getAttribute('data-object-id'));const before=await n.boundingBox();await resize(p,'se',-140,-30);const after=await n.boundingBox();assert.ok(after.width<before.width-100);near(after.width/after.height,before.width/before.height,'aspect ratio');near(after.x,before.x,'image left anchor');near(after.y,before.y,'image top anchor');await shot(p,'image-resize');
+ await p.reload();await p.locator('#edit-toggle').click();near((await n.boundingBox()).width,after.width,'image restore');await p.locator('summary').filter({hasText:'저장·전달'}).click();const download=p.waitForEvent('download');await action(p,'presentation');const file=path.join(dir,'offline.html');await(await download).saveAs(file);const copy=await browser.newPage();await copy.goto('file://'+file+new URL(p.url()).hash);assert.equal(await copy.locator('#edit-resize-frame').count(),0);assert.equal(await copy.locator('[data-editor-ui]').count(),0);const image=copy.locator('.slide.active img[data-added]');await image.evaluate(n=>n.decode());near(await image.evaluate(n=>n.getBoundingClientRect().width/n.getBoundingClientRect().height),before.width/before.height,'offline ratio');
+});
+ui('escape discards resize, preview/presentation hide handles',async t=>{
+ const {page:p}=await setup(t);await action(p,'add-text');const n=p.locator('.slide.active [data-added]').last(),before=await n.boundingBox(),revision=await p.evaluate(()=>WorkshopEditor.document.revision),h=await p.locator('[data-resize-corner=se]').boundingBox();await p.mouse.move(h.x+13,h.y+13);await p.mouse.down();await p.mouse.move(h.x+113,h.y+63);await p.keyboard.press('Escape');await p.mouse.up();near((await n.boundingBox()).width,before.width,'cancel');assert.equal(await p.evaluate(()=>WorkshopEditor.document.revision),revision);assert.ok(await p.locator('body').evaluate(n=>n.classList.contains('is-editing')));
+ await action(p,'behavior-test');assert.ok(await p.locator('#edit-resize-frame').isHidden());await action(p,'behavior-test');assert.ok(await p.locator('#edit-resize-frame').isVisible());await action(p,'done');assert.ok(await p.locator('#edit-resize-frame').isHidden());
+});
+ui('tablet touch dragging resizes instead of moving or scrolling',async t=>{
+ const {page:p}=await setup(t,true);await action(p,'add-text');const n=p.locator('.slide.active [data-added]').last(),before=await n.boundingBox(),h=await p.locator('[data-resize-corner=se]').boundingBox(),cdp=await p.context().newCDPSession(p),x=h.x+13,y=h.y+13;
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});for(let i=1;i<=8;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+120*i/8,y:y+50*i/8}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});const after=await n.boundingBox();near(after.width-before.width,120,'touch width');near(after.height-before.height,50,'touch height');near(after.x,before.x,'touch left anchor');near(after.y,before.y,'touch top anchor');await shot(p,'tablet-touch-resize');
+ const corner=await p.locator('[data-resize-corner=se]').boundingBox(),revision=await p.evaluate(()=>WorkshopEditor.document.revision),tx=corner.x+13,ty=corner.y+13;await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:tx,y:ty}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:tx+40,y:ty+20}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});near((await n.boundingBox()).width,after.width,'touch cancellation');assert.equal(await p.evaluate(()=>WorkshopEditor.document.revision),revision);
+});

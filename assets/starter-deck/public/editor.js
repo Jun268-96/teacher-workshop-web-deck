@@ -26,7 +26,7 @@
     <section id="object-tools" hidden><h3 id="object-name"></h3><label>AI에게 어떻게 바꿔달라고 할까요?<textarea id="change-request" rows="3" placeholder="이 사진을 크게 하고, 클릭하면 교실 적용 예시를 보여줘."></textarea></label><label>동작 조건(선택)<select id="request-trigger"><option value="">지정 없음</option><option>마우스를 올렸을 때</option><option>클릭했을 때</option><option>값을 입력하거나 선택했을 때</option><option>제출했을 때</option></select></label>
       <div class="edit-row"><button data-action="queue-add">요청 목록에 추가</button><button data-action="annotation" id="annotation-button" hidden>ChatGPT 주석</button></div>
     <details id="direct-tools"><summary>직접 수정</summary><label>내용<textarea id="object-content" rows="3"></textarea></label>
-      <div class="edit-grid"><label>글자 크기<input id="object-size" type="number" min="12" max="140" step="2"></label><label>굵기<select id="object-weight"><option value="400">보통</option><option value="600">중간</option><option value="800">굵게</option></select></label><label>색<input id="object-color" type="color"></label><label>정렬<select id="object-align"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></label><label>너비(%)<input id="object-width" type="number" min="10" max="100" step="5"></label><label>높이(px, 0=자동)<input id="object-height" type="number" min="0" max="800" step="10"></label><label>가로 이동(px)<input id="object-x" type="number" min="-4000" max="4000" step="1"></label><label>세로 이동(px)<input id="object-y" type="number" min="-4000" max="4000" step="1"></label></div>
+      <div class="edit-grid"><label>글자 크기<input id="object-size" type="number" min="12" max="140" step="2"></label><label>굵기<select id="object-weight"><option value="400">보통</option><option value="600">중간</option><option value="800">굵게</option></select></label><label>색<input id="object-color" type="color"></label><label>정렬<select id="object-align"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></label><label>너비(%)<input id="object-width" type="number" min="1" max="100" step="1"></label><label>높이(px, 0=자동)<input id="object-height" type="number" min="0" max="800" step="10"></label><label>가로 이동(px)<input id="object-x" type="number" min="-4000" max="4000" step="1"></label><label>세로 이동(px)<input id="object-y" type="number" min="-4000" max="4000" step="1"></label></div>
       <div class="edit-row"><button data-action="object-save">직접 수정 적용</button><button data-action="image-replace">사진 교체</button><button data-action="object-delete">삭제</button></div>
       </details><details><summary>동작 추가·변경</summary><label>호버 설명<input id="object-tooltip" maxlength="2000"></label><label>클릭 설명<textarea id="object-explain" rows="2"></textarea></label><button data-action="behavior-save">동작 적용</button></details>
       </section>
@@ -34,6 +34,19 @@
     <details><summary>저장·전달</summary><p>편집본에는 발표 노트가 포함됩니다. 새 대화에는 편집본과 원본 소스도 함께 전달하세요.</p><div class="edit-row"><button data-action="export">편집본 저장</button><button data-action="import">편집본 불러오기</button><button data-action="presentation">발표용 HTML 저장</button><button data-action="patch">AI 변경안 불러오기</button></div><p id="impact-state"></p></details>
   </section><input id="edit-file" type="file" hidden><dialog id="patch-dialog"><h2>변경안 미리보기</h2><label>확인할 페이지<select id="preview-page"></select></label><pre></pre><p>내용·대본·시간 배분을 확인한 뒤 확정하세요.</p><button data-action="patch-accept">확정</button><button data-action="patch-cancel">취소</button></dialog>`;
   document.body.append(root);
+  const resizeFrame=document.createElement('div');resizeFrame.id='edit-resize-frame';resizeFrame.dataset.editorUi='';resizeFrame.hidden=true;
+  for(const [corner,label] of [['nw','왼쪽 위'],['ne','오른쪽 위'],['sw','왼쪽 아래'],['se','오른쪽 아래']]){const handle=document.createElement('button');handle.type='button';handle.dataset.resizeCorner=corner;handle.setAttribute('aria-label',`${label} 모서리 크기 조절`);handle.title=`${label} 모서리를 끌어 크기 조절`;resizeFrame.append(handle);}
+  document.body.append(resizeFrame);
+  let resizeObserved=null,resizeGesture=null;
+  const resizeObserver=new ResizeObserver(()=>syncResizeFrame());
+  function syncResizeFrame(){
+    const o=target(),node=o&&document.querySelector(`[data-object-id="${o.id}"]`);
+    const visible=editing&&!behaviorPreview&&['text','image'].includes(o?.type)&&node&&!node.isContentEditable&&node.getClientRects().length;
+    resizeFrame.hidden=!visible;if(!visible)return;
+    if(resizeObserved!==node){resizeObserver.disconnect();resizeObserver.observe(node);resizeObserved=node;}
+    const r=node.getBoundingClientRect();Object.assign(resizeFrame.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
+  }
+  window.addEventListener('resize',syncResizeFrame);$('#deck').addEventListener('scroll',syncResizeFrame);document.addEventListener('workshop:layout',syncResizeFrame);
   function current() { return doc.pages.find(p=>p.id === api.currentId()) || doc.pages[0]; }
   function target() { return current().objects.find(o=>o.id === selected && !o.deleted); }
   function status(text) { $('#save-state').textContent = text; }
@@ -61,7 +74,7 @@
         if(o.type==='image') { node.src=o.content;node.alt=node.alt||'편집한 이미지';node.draggable=false; }
         if(o.type==='youtube') {node.src=M.youtube(o.content);node.title='YouTube 영상';node.allowFullscreen=true;node.referrerPolicy='strict-origin-when-cross-origin';node.setAttribute('sandbox','allow-scripts allow-same-origin allow-presentation');}
         const s=o.style; for (const prop of ['fontSize','fontWeight','color','textAlign','width','height']) if(s[prop]!==undefined) node.style[prop]=['fontSize','height'].includes(prop)?s[prop]?s[prop]+'px':'auto':prop==='width'?s[prop]+'%':s[prop];
-        if(s.offsetX!==undefined||s.offsetY!==undefined){node.dataset.moveX=s.offsetX||0;node.dataset.moveY=s.offsetY||0;node.style.translate='none';}else node.style.translate=`${s.x||0}% ${s.y||0}%`;node.style.maxWidth='100%';if(o.type==='image')node.style.objectFit='contain';
+        if(s.offsetX!==undefined||s.offsetY!==undefined){node.dataset.moveX=s.offsetX||0;node.dataset.moveY=s.offsetY||0;node.style.translate='none';}else node.style.translate=`${s.x||0}% ${s.y||0}%`;node.style.maxWidth='100%';if(s.width!==undefined)node.style.minWidth='0';if(s.height>0)node.style.maxHeight='none';if(o.type==='image')node.style.objectFit='contain';
         if(o.behavior.tooltip){node.dataset.tooltip=o.behavior.tooltip;node.tabIndex=0;node.removeAttribute('title');}
         if(o.behavior.explain) {node.dataset.explain=o.behavior.explain;node.tabIndex=0;node.setAttribute('role','button');}
         node.setAttribute('oai-annotatable',`${p.title} · ${o.key}`);
@@ -76,7 +89,7 @@
     const page = document.getElementById(p.id), node=page.querySelector(`[data-object-id="${o.id}"]`);
     return {deckId:doc.deckId,templateVersion:doc.templateVersion,revision:doc.revision,page:{id:p.id,title:p.title,notes:p.notes,seconds:p.seconds},object:{...clone(o),content:o.type==='image'&&o.content.startsWith('data:')?`embedded:${o.id}`:o.content},internalState:{tabs:[...page.querySelectorAll('[role=tab][aria-selected=true]')].map(t=>t.textContent),inputs:[...page.querySelectorAll('input,select,textarea')].map(n=>({id:n.dataset.editKey||n.id,value:n.value}))},preserve:{attributes:node?[...node.attributes].filter(a=>/^data-|^aria-/.test(a.name)).map(a=>[a.name,a.value]):[],behavior:o.behavior},assets:o.type==='image'?[o.content.startsWith('data:')?`embedded:${o.id}`:o.content]:[],impactReview:['화면과 사례의 의미','발표 노트','시간 배분','관련 페이지와 참여 활동']};
   }
-  function highlight() {document.querySelectorAll('.edit-selected').forEach(n=>n.classList.remove('edit-selected')); if(editing&&selected) document.querySelector(`[data-object-id="${selected}"]`)?.classList.add('edit-selected');}
+  function highlight() {document.querySelectorAll('.edit-selected,.edit-resizable').forEach(n=>n.classList.remove('edit-selected','edit-resizable')); if(editing&&selected){const node=document.querySelector(`[data-object-id="${selected}"]`);node?.classList.add('edit-selected');if(['text','image'].includes(target()?.type))node?.classList.add('edit-resizable');}syncResizeFrame();}
   function renderPanel() {
     const p=current(), o=target();$('#page-select').replaceChildren(...doc.pages.map((x,i)=>new Option(`${i+1}. ${x.title}`,x.id)));$('#page-select').value=p.id;$('#page-title').value=p.title;$('#page-notes').value=p.notes;$('#page-seconds').value=p.seconds;
     $('#object-list').replaceChildren(new Option('대상을 선택하세요',''),...p.objects.filter(x=>!x.deleted).map(x=>new Option(x.type==='text'?x.content.slice(0,30):x.key,x.id)));$('#object-list').value=o?.id||'';
@@ -89,7 +102,7 @@
     $('#object-tooltip').value=o.behavior.tooltip||'';$('#object-explain').value=o.behavior.explain||'';
     $('[data-action="image-replace"]').hidden=o.type!=='image';
   }
-  function setBehaviorPreview(on){behaviorPreview=on&&editing;document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'동작 시험 중 · 화면에서 호버하거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 더블클릭해 글자를 수정하세요.';api.hideTooltip?.();}
+  function setBehaviorPreview(on){behaviorPreview=on&&editing;document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'동작 시험 중 · 화면에서 호버하거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 모서리로 크기를 조절하세요. 더블클릭하면 글자를 수정합니다.';api.hideTooltip?.();syncResizeFrame();}
   function setEditing(on) { editing=on;setBehaviorPreview(false);panelPage=api.currentId();document.body.classList.toggle('is-editing',on);$('#edit-tools').hidden=!on;$('#edit-toggle').setAttribute('aria-pressed',String(on));$('#edit-toggle').textContent=on?'편집 중':'편집';api.layoutMoved?.();renderPanel();highlight(); }
   function choose(id) { selected=id;renderPanel();highlight(); }
   function download(name,content,type='application/json') {const a=document.createElement('a');const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -164,15 +177,41 @@
         // Default stretched headings should move like text boxes. Explicit widths stay intact.
         if(o.type==='text'&&o.style.width===undefined){const range=document.createRange();range.selectNodeContents(el);const width=range.getBoundingClientRect().width;const parent=el.parentElement,parentStyle=getComputedStyle(parent),parentWidth=parent.clientWidth-parseFloat(parentStyle.paddingLeft)-parseFloat(parentStyle.paddingRight);if(width>0&&parentWidth>0){fitWidth=Math.max(10,Math.min(100,(width+4)/parentWidth*100));el.style.width=fitWidth+'%';}}
       }
-      if(!moved)return;ev.preventDefault();const pos=position(ev);el.style.translate=`${pos.x}px ${pos.y}px`;
+      if(!moved)return;ev.preventDefault();const pos=position(ev);el.style.translate=`${pos.x}px ${pos.y}px`;syncResizeFrame();
     };
     function cleanup(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',finish);el.removeEventListener('pointercancel',cancel);}
     const finish=ev=>{cleanup();if(!moved)return;const pos=position(ev);mutate(d=>Object.assign(d.pages.find(p=>p.id===current().id).objects.find(n=>n.id===o.id).style,{x:0,y:0,offsetX:pos.x/box.width*100,offsetY:pos.y/box.height*100,...(fitWidth===undefined?{}:{width:fitWidth})}));};
     const cancel=()=>{cleanup();el.style.width=start.width;el.style.translate=`${start.ox}px ${start.oy}px`;};
     el.addEventListener('pointermove',move);el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',cancel);
   });
-  $('#deck').addEventListener('dblclick',e=>{const el=e.target.closest('[data-object-id]'),o=target();if(!editing||behaviorPreview||!el||o?.type!=='text')return;el.contentEditable='plaintext-only';el.focus();el.addEventListener('blur',()=>{const value=el.textContent;el.removeAttribute('contenteditable');mutate(d=>d.pages.find(x=>x.id===current().id).objects.find(x=>x.id===o.id).content=value);},{once:true});});
-  document.addEventListener('keydown',e=>{if(document.querySelector('dialog[open]'))return;if(editing&&e.key==='Escape'){if(behaviorPreview)setBehaviorPreview(false);else setEditing(false);return;}if(editing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!e.target.closest('input,textarea,[contenteditable]')){e.preventDefault();root.querySelector(`[data-action="${e.shiftKey?'redo':'undo'}"]`).click();}});
+  resizeFrame.addEventListener('click',e=>e.stopPropagation());
+  resizeFrame.addEventListener('pointerdown',e=>{
+    const handle=e.target.closest('[data-resize-corner]'),o=target();if(!handle||!editing||behaviorPreview||!['text','image'].includes(o?.type)||e.button!==0)return;
+    e.preventDefault();e.stopPropagation();
+    const node=document.querySelector(`[data-object-id="${o.id}"]`),page=node.closest('.slide'),frame=page.getBoundingClientRect(),r=node.getBoundingClientRect(),parent=node.parentElement,ps=getComputedStyle(parent),cs=getComputedStyle(node);
+    const parentWidth=parent.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight),west=handle.dataset.resizeCorner.includes('w'),north=handle.dataset.resizeCorner.includes('n');
+    const anchor={x:west?r.right:r.left,y:north?r.bottom:r.top},ratio=r.width/r.height,oldStyle=node.getAttribute('style');let changed=false,last=null;
+    const clamp=(v,min,max)=>Math.max(min,Math.min(Math.max(min,max),v));
+    function update(ev){
+      const dx=(ev.clientX-e.clientX)*(west?-1:1),dy=(ev.clientY-e.clientY)*(north?-1:1);if(!changed&&Math.hypot(dx,dy)<3)return;changed=true;
+      const maxWidth=Math.max(parentWidth*.01,Math.min(parentWidth,west?anchor.x-frame.left-4:frame.right-anchor.x-4)),maxHeight=Math.max(1,Math.min(800,north?anchor.y-frame.top-4:frame.bottom-anchor.y-4)),minWidth=Math.min(Math.max(parentWidth*.01,24),maxWidth),minHeight=Math.min(Math.max(24,parseFloat(cs.lineHeight)||24),maxHeight);
+      let width,height;
+      if(o.type==='image'){
+        const change=Math.abs(dx/r.width)>Math.abs(dy/r.height)?dx:dy*ratio;
+        width=clamp(r.width+change,Math.max(minWidth,minHeight*ratio),Math.min(maxWidth,maxHeight*ratio));height=width/ratio;
+      }else {width=clamp(r.width+dx,minWidth,maxWidth);height=clamp(r.height+dy,minHeight,maxHeight);}
+      Object.assign(node.style,{width:width/parentWidth*100+'%',height:height+'px',maxHeight:'none',minWidth:'0',translate:'none'});
+      const natural=node.getBoundingClientRect(),x=(west?anchor.x-natural.width:anchor.x)-natural.left,y=(north?anchor.y-natural.height:anchor.y)-natural.top;
+      node.style.translate=`${x}px ${y}px`;last={width:width/parentWidth*100,height,x:0,y:0,offsetX:x/frame.width*100,offsetY:y/frame.height*100};syncResizeFrame();
+    }
+    function cleanup(){handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',finish);handle.removeEventListener('pointercancel',cancel);resizeGesture=null;document.body.classList.remove('is-resizing');}
+    const move=ev=>{ev.preventDefault();update(ev);};
+    const cancel=()=>{cleanup();if(oldStyle===null)node.removeAttribute('style');else node.setAttribute('style',oldStyle);api.layoutMoved?.();syncResizeFrame();};
+    const finish=ev=>{update(ev);cleanup();if(last)mutate(d=>Object.assign(d.pages.find(p=>p.id===page.id).objects.find(n=>n.id===o.id).style,last));};
+    resizeGesture={cancel};document.body.classList.add('is-resizing');handle.setPointerCapture(e.pointerId);handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',finish);handle.addEventListener('pointercancel',cancel);
+  });
+  $('#deck').addEventListener('dblclick',e=>{const el=e.target.closest('[data-object-id]'),o=target();if(!editing||behaviorPreview||!el||o?.type!=='text')return;el.contentEditable='plaintext-only';syncResizeFrame();el.focus();el.addEventListener('blur',()=>{const value=el.textContent;el.removeAttribute('contenteditable');mutate(d=>d.pages.find(x=>x.id===current().id).objects.find(x=>x.id===o.id).content=value);},{once:true});});
+  document.addEventListener('keydown',e=>{if(document.querySelector('dialog[open]'))return;if(editing&&e.key==='Escape'){if(resizeGesture){e.preventDefault();resizeGesture.cancel();}else if(behaviorPreview)setBehaviorPreview(false);else setEditing(false);return;}if(editing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!e.target.closest('input,textarea,[contenteditable]')){e.preventDefault();root.querySelector(`[data-action="${e.shiftKey?'redo':'undo'}"]`).click();}});
   document.addEventListener('workshop:slide',()=>{if(editing){if(panelPage!==api.currentId())selected=null;panelPage=api.currentId();renderPanel();highlight();}});
   $('#annotation-button').hidden=typeof document.oai?.annotation?.request!=='function';
   // Read-only integration API for agents/tests; mutations use validated revision-checked patches.
