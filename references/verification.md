@@ -95,4 +95,6 @@ node --test <skill-dir>/scripts/*.test.mjs
 
 `node --test scripts/alignment.test.mjs`는 실제 드래그 중 페이지 중앙/다른 요소 가장자리·중앙의 가이드와 맞춰진 좌표를 측정한다. 텍스트·사진, 실행 취소/재실행/새로고침, Alt 해제, 터치 허용 오차와 취소, 발표용 HTML의 가이드 제거를 확인한다. `WORKSHOP_ALIGNMENT_OUTPUT=<private-directory>`로 드래그 중 캡처를 남긴다. 순수 포인터 이동 거리 검사는 Alt로 자동 맞춤을 끈 뒤 수행한다.
 
+`node --test scripts/scenes.test.mjs`는 별도 생성한 일반 장면 실험실의 16개 기능을 실제 버튼·슬라이더·사진 파일·입력·드래그로 조작한다. 선택 저장/JSON/새로고침, 모바일·태블릿 등 5종 화면의 조작 영역, 터치 대안, 동작 줄이기, View Transition 미지원 경로, 오프라인 파일 실행과 비덮어쓰기 생성도 확인한다. `WORKSHOP_SCENES_OUTPUT=<private-directory>`로 캡처를 남긴다. 이 검사가 AI의 자료 해석·추천 품질이나 새 사용자의 설치 없는 환경 전체를 증명하지는 않는다. 추천은 원본 위치와 선택 이유를 대조하고, 실제 구성안 승인은 대화에서 별도 확인한다.
+
 주석 전송이나 외부 AI의 답변 품질·YouTube 실제 재생·공개 HTTPS 운영·물리 태블릿은 이 로컬 E2E의 증거가 아니다. 그런 연동은 해당 환경에서 별도로 확인한다.

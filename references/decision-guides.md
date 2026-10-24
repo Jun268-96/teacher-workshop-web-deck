@@ -91,7 +91,7 @@ Use a compact table, adapting column widths to the actual workshop:
 
 Also state the overall arc, page count, session-time total including the agreed Q&A/break boundaries, required interactive modules, and unresolved source or setup needs. In a hands-on workshop, make practice blocks and success criteria visible in this plan. Recommend one coherent arrangement and explain important choices briefly.
 
-Ask one direct confirmation, for example: “이 페이지 구성과 진행 방식으로 제작할까요? 바꿀 부분이 있으면 먼저 조정하겠습니다.” Wait for the response before substantial HTML/CSS/JS, new visual-asset production, production-tool installation, or deployment. Source reading, ordinary public research, source inventory and text/structural planning may continue before this point. Do not turn silence or a generic earlier “알아서 해줘” into approval of an unseen plan.
+Ask one direct confirmation, for example: “이 페이지 구성과 진행 방식으로 제작할까요? 바꿀 부분이 있으면 먼저 조정하겠습니다.” Wait for the response before substantial HTML/CSS/JS, new visual-asset production, production-tool installation, or deployment. Source reading, ordinary public research, source inventory and text/structural planning may continue before this point. Opening or copying the skill's already-built generic scene lab is also allowed during planning; it is not production of the user's deck. Scene preferences or a selection JSON do not approve the full page plan. Do not turn silence or a generic earlier “알아서 해줘” into approval of an unseen plan.
 
 Record status, the actual user approval/explicit waiver, and the approved map version in `workshop/slide-map.md`. An agent must not invent the confirmation. An earlier approval of this same plan followed by a build instruction is sufficient; do not ask again. User instructions to skip this gate take precedence.
 

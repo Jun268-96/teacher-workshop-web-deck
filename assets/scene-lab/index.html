@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>연수 장면 실험실</title><link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="scenes.css"><script defer src="catalog.js"></script><script defer src="scenes.js"></script></head>
+<body>
+  <header class="lab-header"><div><span class="eyebrow">눌러 보고 고르는 웹 발표자료</span><h1>연수 장면 실험실</h1></div><button id="selection-open" aria-haspopup="dialog">담은 장면 <b id="selection-count">0</b></button></header>
+  <div class="lab-layout"><aside class="scene-index"><p id="recommend-note" hidden>추천한 장면부터 살펴보세요.</p><nav id="scene-nav" aria-label="기능별 연수 장면"></nav></aside>
+  <main id="lab-main"><header class="scene-heading"><div><span id="scene-number" class="eyebrow"></span><h2 id="scene-title"></h2></div><button id="choose-scene" aria-pressed="false">이 장면 담기</button></header><p id="scene-action" class="instruction"></p><div id="stage" class="stage"></div>
+  <footer class="scene-footer"><div><p id="scene-value"></p><small id="scene-scope"></small></div><div class="scene-controls"><button id="replay">처음부터</button><button id="previous" aria-label="이전 예시">←</button><span id="scene-counter"></span><button id="next" aria-label="다음 예시">→</button></div></footer></main></div>
+  <dialog id="selection-dialog" aria-labelledby="selection-title"><header><h2 id="selection-title">담은 장면</h2><button id="selection-close" aria-label="닫기">닫기</button></header><p>고른 예시를 바탕으로 전체 페이지 구성을 제안받습니다. 제작은 구성안을 확인한 다음 시작합니다.</p><ul id="selection-list"></ul><div class="dialog-actions"><button id="selection-copy">선택 복사</button><button id="selection-download">선택 파일 저장</button><button id="selection-minimal">효과 없이 간결하게</button></div><textarea id="selection-text" readonly aria-label="전달할 선택 내용" rows="6"></textarea><p id="selection-status" role="status"></p></dialog>
+  <p id="lab-status" class="sr-only" role="status"></p>
+</body></html>

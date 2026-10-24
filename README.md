@@ -2,6 +2,16 @@
 
 교사 연수용 **웹 발표자료**를 기획하고, 밝은 바탕과 굵은 한국어 글꼴·색 테두리 디자인으로 제작·검증·배포하는 AI 에이전트 스킬입니다.
 
+자료를 먼저 읽고 어울리는 기능을 체험으로 추천합니다. 사용자가 고르면 전체 페이지 구성을 확인받은 뒤 제작합니다. 기능 목록이나 긴 기획서를 사용자가 미리 작성할 필요는 없습니다.
+
+**연수 장면 실험실**에는 클릭 애니메이션, 움직이는 제목, 모션 그래픽, 이미지 슬라이드, 전후 비교, 부분 확대, 뒤집기, 클릭 지점, 진행 조작, 스크롤, 입체 효과, 배치 전환, 선택 분기, 설문, 단어 모으기, 순서 변경의 16가지 예시가 있습니다.
+
+```sh
+node scripts/preview-scenes.mjs --dest ./scene-preview --serve --recommend reveal,compare,motion
+```
+
+설치·계정 없이 출력된 URL에서 체험합니다(Node 필요). 설문·단어는 한 브라우저 예시이며 여러 기기의 실제 집계에는 서버 연결이 필요합니다. 선택은 복사/JSON으로 전달할 수 있고, 전체 구성안 승인을 대신하지 않습니다. [자료 기반 추천·선택 흐름](references/scene-discovery.md) · [CSS 효과 조사와 공식 출처](references/scene-effects-research.md)
+
 [이전 정적 템플릿 체험](https://vanollim-deck-harness-20261023.hhj96916.workers.dev/) · [스킬 지침](SKILL.md) · [ZIP 다운로드](https://github.com/Jun268-96/teacher-workshop-web-deck/archive/refs/heads/main.zip)
 
 ## 사용하기

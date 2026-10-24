@@ -1,5 +1,5 @@
 interface:
   display_name: "연수자료 만들기"
-  short_description: "반올림 브랜드로 교사 연수 웹 발표자료를 제작하고 검증·배포합니다."
+  short_description: "자료를 읽고 장면을 추천해 교사 연수 웹 발표자료를 제작·검증합니다."
   brand_color: "#df8288"
-  default_prompt: "$teacher-workshop-web-deck으로 내 자료를 반올림 브랜드 웹 발표자료로 만들고, 필요한 설치를 안내한 뒤 검증과 배포까지 진행해줘."
+  default_prompt: "$teacher-workshop-web-deck으로 내 자료를 읽고 어울리는 연수 장면을 체험하게 추천해줘. 내가 고르면 전체 페이지 구성을 확인받은 뒤 제작하고 검증·배포해줘."
