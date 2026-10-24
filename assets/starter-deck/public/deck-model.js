@@ -20,9 +20,10 @@
         if (o.type === 'image' && !safeImage(o.content)) throw Error('PNG/JPEG/WebP 또는 프로젝트 assets/ 이미지만 가능합니다.');
         if (o.type === 'youtube' && !youtube(o.content)) throw Error('유효한 YouTube 주소가 필요합니다.');
         const s = o.style;
-        if (!s || Object.keys(s).some(k => !['fontSize','fontWeight','color','textAlign','width','height','x','y','offsetX','offsetY'].includes(k))) throw Error('지원하지 않는 스타일입니다.');
+        if (!s || Object.keys(s).some(k => !['fontSize','fontWeight','letterSpacing','color','textAlign','width','height','x','y','offsetX','offsetY'].includes(k))) throw Error('지원하지 않는 스타일입니다.');
         for (const [k,v] of Object.entries(s)) {
           if (['fontSize','fontWeight','width','height','x','y','offsetX','offsetY'].includes(k) && (!Number.isFinite(v) || v < ({fontSize:12,fontWeight:100,width:1,height:0,x:-20,y:-20,offsetX:-100,offsetY:-100}[k]) || v > ({fontSize:140,fontWeight:900,width:100,height:800,x:20,y:20,offsetX:100,offsetY:100}[k]))) throw Error('배치 범위를 벗어났습니다.');
+          if(k==='letterSpacing'&&(!Number.isFinite(v)||v<-.2||v>1))throw Error('자간 범위를 벗어났습니다.');
           if (k === 'color' && !/^#[a-fA-F0-9]{6}$/.test(v) || k === 'textAlign' && !['left','center','right'].includes(v)) throw Error('지원하지 않는 글자 스타일입니다.');
         }
         const b = o.behavior;

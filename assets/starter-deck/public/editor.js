@@ -74,6 +74,7 @@
         if(o.type==='image') { node.src=o.content;node.alt=node.alt||'편집한 이미지';node.draggable=false; }
         if(o.type==='youtube') {node.src=M.youtube(o.content);node.title='YouTube 영상';node.allowFullscreen=true;node.referrerPolicy='strict-origin-when-cross-origin';node.setAttribute('sandbox','allow-scripts allow-same-origin allow-presentation');}
         const s=o.style; for (const prop of ['fontSize','fontWeight','color','textAlign','width','height']) if(s[prop]!==undefined) node.style[prop]=['fontSize','height'].includes(prop)?s[prop]?s[prop]+'px':'auto':prop==='width'?s[prop]+'%':s[prop];
+        if(s.letterSpacing!==undefined)node.style.letterSpacing=s.letterSpacing+'em';
         if(s.offsetX!==undefined||s.offsetY!==undefined){node.dataset.moveX=s.offsetX||0;node.dataset.moveY=s.offsetY||0;node.style.translate='none';}else node.style.translate=`${s.x||0}% ${s.y||0}%`;node.style.maxWidth='100%';if(s.width!==undefined)node.style.minWidth='0';if(s.height>0)node.style.maxHeight='none';if(o.type==='image')node.style.objectFit='contain';
         if(o.behavior.tooltip){node.dataset.tooltip=o.behavior.tooltip;node.tabIndex=0;node.removeAttribute('title');}
         if(o.behavior.explain) {node.dataset.explain=o.behavior.explain;node.tabIndex=0;node.setAttribute('role','button');}
@@ -190,19 +191,19 @@
     e.preventDefault();e.stopPropagation();
     const node=document.querySelector(`[data-object-id="${o.id}"]`),page=node.closest('.slide'),frame=page.getBoundingClientRect(),r=node.getBoundingClientRect(),parent=node.parentElement,ps=getComputedStyle(parent),cs=getComputedStyle(node);
     const parentWidth=parent.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight),west=handle.dataset.resizeCorner.includes('w'),north=handle.dataset.resizeCorner.includes('n');
-    const anchor={x:west?r.right:r.left,y:north?r.bottom:r.top},ratio=r.width/r.height,oldStyle=node.getAttribute('style');let changed=false,last=null;
+    const anchor={x:west?r.right:r.left,y:north?r.bottom:r.top},ratio=r.width/r.height,oldStyle=node.getAttribute('style'),fontSize=parseFloat(cs.fontSize),letterSpacing=(parseFloat(cs.letterSpacing)||0)/fontSize;let changed=false,last=null;
     const clamp=(v,min,max)=>Math.max(min,Math.min(Math.max(min,max),v));
     function update(ev){
       const dx=(ev.clientX-e.clientX)*(west?-1:1),dy=(ev.clientY-e.clientY)*(north?-1:1);if(!changed&&Math.hypot(dx,dy)<3)return;changed=true;
-      const maxWidth=Math.max(parentWidth*.01,Math.min(parentWidth,west?anchor.x-frame.left-4:frame.right-anchor.x-4)),maxHeight=Math.max(1,Math.min(800,north?anchor.y-frame.top-4:frame.bottom-anchor.y-4)),minWidth=Math.min(Math.max(parentWidth*.01,24),maxWidth),minHeight=Math.min(Math.max(24,parseFloat(cs.lineHeight)||24),maxHeight);
-      let width,height;
-      if(o.type==='image'){
-        const change=Math.abs(dx/r.width)>Math.abs(dy/r.height)?dx:dy*ratio;
-        width=clamp(r.width+change,Math.max(minWidth,minHeight*ratio),Math.min(maxWidth,maxHeight*ratio));height=width/ratio;
-      }else {width=clamp(r.width+dx,minWidth,maxWidth);height=clamp(r.height+dy,minHeight,maxHeight);}
-      Object.assign(node.style,{width:width/parentWidth*100+'%',height:height+'px',maxHeight:'none',minWidth:'0',translate:'none'});
+      const maxWidth=Math.max(parentWidth*.01,Math.min(parentWidth,west?anchor.x-frame.left-4:frame.right-anchor.x-4)),maxHeight=Math.max(1,Math.min(800,north?anchor.y-frame.top-4:frame.bottom-anchor.y-4)),minWidth=Math.min(Math.max(parentWidth*.01,o.type==='text'?1:24),maxWidth),minHeight=Math.min(o.type==='text'?1:Math.max(24,parseFloat(cs.lineHeight)||24),maxHeight);
+      const change=Math.abs(dx/r.width)>Math.abs(dy/r.height)?dx:dy*ratio;
+      const minScale=o.type==='text'?12/fontSize:0,maxScale=o.type==='text'?140/fontSize:Infinity;
+      const limit=Math.min(maxWidth,maxHeight*ratio,r.width*maxScale),minimum=Math.min(limit,Math.max(minWidth,minHeight*ratio,r.width*minScale));
+      const width=clamp(r.width+change,minimum,limit),height=width/ratio;
+      const textStyle=o.type==='text'?{fontSize:clamp(fontSize*width/r.width,12,140),letterSpacing}:{};
+      Object.assign(node.style,{width:width/parentWidth*100+'%',height:height+'px',maxHeight:'none',minWidth:'0',translate:'none',...(textStyle.fontSize?{fontSize:textStyle.fontSize+'px',letterSpacing:letterSpacing+'em'}:{})});
       const natural=node.getBoundingClientRect(),x=(west?anchor.x-natural.width:anchor.x)-natural.left,y=(north?anchor.y-natural.height:anchor.y)-natural.top;
-      node.style.translate=`${x}px ${y}px`;last={width:width/parentWidth*100,height,x:0,y:0,offsetX:x/frame.width*100,offsetY:y/frame.height*100};syncResizeFrame();
+      node.style.translate=`${x}px ${y}px`;last={width:width/parentWidth*100,height,x:0,y:0,offsetX:x/frame.width*100,offsetY:y/frame.height*100,...textStyle};syncResizeFrame();
     }
     function cleanup(){handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',finish);handle.removeEventListener('pointercancel',cancel);resizeGesture=null;document.body.classList.remove('is-resizing');}
     const move=ev=>{ev.preventDefault();update(ev);};
