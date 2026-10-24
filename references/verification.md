@@ -89,4 +89,6 @@ node --test <skill-dir>/scripts/*.test.mjs
 
 `node --test scripts/journeys.test.mjs`는 내부 수정 함수를 호출하지 않고 메뉴·대상 선택·파일 선택·다운로드·확정/취소 버튼을 사용한다. 조회용 정본 확인만 허용한다. 다섯 요청의 JSON 왕복, 새/복제 페이지 주소 복원, 이미지/클릭 설명이 포함된 독립 발표 HTML, 휴대폰 터치, 다섯 참여 블록·질문 처리·연결 복구·CSV/JSON·종료/초기화를 시험한다. `WORKSHOP_E2E_OUTPUT=<private-directory>`를 지정하면 캡처와 브라우저 trace ZIP을 남긴다. Trace에는 격리 테스트 회차의 인증 정보가 포함될 수 있으므로 공개 저장소/발표 자료에는 넣지 않는다. 실제 연수 기록을 사용하지 않는다.
 
+`node --test scripts/movement.test.mjs`는 새 텍스트/기존 제목을 첫 드래그로 240px 옮긴 실제 거리를 측정한다. 다른 요소 보존, 겹침 허용, 실행 취소/다시 실행/새로고침, 휴대폰 경계, 기존 좌표 편집본 가져오기, 동작 적용 직후 호버·클릭 시험, 설명 변경·삭제, 독립 HTML의 동작과 스타일을 확인한다. `WORKSHOP_MOVEMENT_OUTPUT=<private-directory>`로 캡처와 이동 거리 JSON을 남긴다. 저장값만 확인한 검사를 실제 드래그 성공으로 간주하지 않는다.
+
 주석 전송이나 외부 AI의 답변 품질·YouTube 실제 재생·공개 HTTPS 운영·물리 태블릿은 이 로컬 E2E의 증거가 아니다. 그런 연동은 해당 환경에서 별도로 확인한다.
