@@ -31,10 +31,14 @@
       <div class="edit-row"><button data-action="object-save">직접 수정 적용</button><button data-action="image-replace">사진 교체</button><button data-action="object-delete">삭제</button></div>
       </details><details><summary>동작 추가·변경</summary><label>호버 설명<input id="object-tooltip" maxlength="2000"></label><label>클릭 설명<textarea id="object-explain" rows="2"></textarea></label><button data-action="behavior-save">동작 적용</button></details>
       </section>
-    <details id="queue-details"><summary>수정 요청 <span id="queue-count">0</span>개</summary><ol id="request-list"></ol><button data-action="copy">요청 전체 복사</button><button data-action="requests-export">요청 파일 저장</button><label>복사가 막혔을 때<textarea id="batch-copy" readonly rows="4"></textarea></label></details>
+    <details id="queue-details"><summary>수정 요청 <span id="queue-count">0</span>개</summary><button type="button" data-action="queue-annotation" id="queue-annotation-button" hidden>모두 ChatGPT 주석으로 보내기</button><p id="queue-annotation-help"></p><ol id="request-list"></ol><button data-action="copy">요청 전체 복사</button><button data-action="requests-export">요청 파일 저장</button><label>복사가 막혔을 때<textarea id="batch-copy" readonly rows="4"></textarea></label></details>
     <details><summary>저장·전달</summary><p>편집본에는 발표 노트가 포함됩니다. 새 대화에는 편집본과 원본 소스도 함께 전달하세요.</p><div class="edit-row"><button data-action="export">편집본 저장</button><button data-action="import">편집본 불러오기</button><button data-action="presentation">발표용 HTML 저장</button><button data-action="patch">AI 변경안 불러오기</button></div><p id="impact-state"></p></details>
   </section><input id="edit-file" type="file" hidden><dialog id="patch-dialog"><h2>변경안 미리보기</h2><label>확인할 페이지<select id="preview-page"></select></label><pre></pre><p>내용·대본·시간 배분을 확인한 뒤 확정하세요.</p><button data-action="patch-accept">확정</button><button data-action="patch-cancel">취소</button></dialog>`;
   document.body.append(root);
+  // Keep the selected text connected and visible while the native annotation editor captures it.
+  const shareDialog=document.createElement('dialog');shareDialog.id='editor-request-share';shareDialog.setAttribute('aria-labelledby','request-share-title');
+  shareDialog.innerHTML='<header><h2 id="request-share-title">모아둔 수정 요청</h2><button type="button" data-action="share-close" aria-label="요청 전달 창 닫기">닫기</button></header><p id="request-share-state" role="status"></p><pre id="request-share-text" tabindex="0"></pre><footer><button type="button" data-action="share-prev">이전 묶음</button><span id="request-share-part"></span><button type="button" data-action="share-next">다음 묶음</button><button type="button" data-action="share-annotation">ChatGPT 주석으로 보내기</button></footer>';
+  root.append(shareDialog);let shareSnapshot=null,shareParts=[],shareIndex=0;
   const resizeFrame=document.createElement('div');resizeFrame.id='edit-resize-frame';resizeFrame.dataset.editorUi='';resizeFrame.hidden=true;
   for(const [corner,label] of [['nw','왼쪽 위'],['ne','오른쪽 위'],['sw','왼쪽 아래'],['se','오른쪽 아래']]){const handle=document.createElement('button');handle.type='button';handle.dataset.resizeCorner=corner;handle.setAttribute('aria-label',`${label} 모서리 크기 조절`);handle.title=`${label} 모서리를 끌어 크기 조절`;resizeFrame.append(handle);}
   document.body.append(resizeFrame);
@@ -116,11 +120,36 @@
     $('#direct-tools [data-action="image-replace"]').hidden=o.type!=='image';
   }
   function setBehaviorPreview(on){behaviorPreview=on&&editing;hideGuides();document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'동작 시험 중 · 화면에서 호버하거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 모서리로 크기를 조절하세요. 더블클릭하면 글자를 수정합니다.';api.hideTooltip?.();syncResizeFrame();ui?.refresh();}
-  function setEditing(on) { editing=on;setBehaviorPreview(false);panelPage=api.currentId();document.body.classList.toggle('is-editing',on);$('#edit-tools').hidden=!on;$('#edit-toggle').setAttribute('aria-pressed',String(on));$('#edit-toggle').textContent=on?'편집 중':'편집';api.layoutMoved?.();renderPanel();highlight();ui?.layout(); }
+  function setEditing(on) { editing=on;if(!on)shareDialog.close();setBehaviorPreview(false);panelPage=api.currentId();document.body.classList.toggle('is-editing',on);$('#edit-tools').hidden=!on;$('#edit-toggle').setAttribute('aria-pressed',String(on));$('#edit-toggle').textContent=on?'편집 중':'편집';api.layoutMoved?.();renderPanel();highlight();ui?.layout(); }
   function choose(id) { selected=id;renderPanel();highlight(); }
   function download(name,content,type='application/json') {const a=document.createElement('a');const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function batch() {return JSON.stringify({format:'workshop-change-requests/v1',deckId:doc.deckId,baseRevision:doc.revision,instructions:'각 요청 context.revision은 수집 당시 상태입니다. 첨부 편집본의 현재 버전과 내용이 달라졌다면 충돌을 확인하세요. 정확한 page.id/object.id로 수정하세요. 요청 외 대상과 기존 동작을 보존하세요. 첨부 편집본+원본 소스가 필요합니다. JSON 패치는 {deckId,baseRevision,changes:[{pageId,objectId,set:{content,style,behavior}}],pageUpdates:[{pageId,notes,seconds}]} 형식입니다. 지원하지 않는 코드 변경은 별도 소스 차이로 전달하고 검증하세요.',requests:queue},null,2);}
-  function renderQueue() {$('#queue-count').textContent=queue.length;$('#request-list').replaceChildren();for(const r of queue){const li=document.createElement('li'),label=document.createElement('p'),input=document.createElement('textarea'),remove=document.createElement('button');label.textContent=`${r.context.page.title} · ${{text:'글자',image:'사진',youtube:'영상',block:'화면 블록',scene:'장면'}[r.context.object.type]||'선택 요소'}`;input.value=r.request;input.setAttribute('aria-label','저장된 수정 요청');input.addEventListener('change',()=>{r.request=input.value;persist();$('#batch-copy').value=batch();});remove.textContent='이 요청 삭제';remove.type='button';remove.addEventListener('click',()=>{queue=queue.filter(x=>x.id!==r.id);persist();renderQueue();});li.append(label,input,remove);$('#request-list').append(li);}$('#batch-copy').value=batch();ui?.refresh();}
+  function annotationAvailable(){return typeof document.oai?.annotation?.request==='function';}
+  function shareState(message){$('#request-share-state').textContent=message;status(message);}
+  function renderShare(){
+    const part=shareIndex+1,total=shareParts.length;
+    $('#request-share-text').textContent=`수정 요청 ${shareSnapshot.count}개\ndeckId: ${shareSnapshot.deckId}\nbaseRevision: ${shareSnapshot.revision}\n묶음 ${part}/${total}${total>1?' · 모든 묶음을 전달한 뒤 합쳐서 검토하세요.':''}\n내장 이미지의 바이너리는 참조로 대체했습니다. 원본 소스에 접근할 수 없으면 필요한 편집본을 요청하세요.\n\n${shareParts[shareIndex]}`;
+    $('#request-share-text').scrollTop=0;$('#request-share-part').textContent=total>1?`${part} / ${total}`:'';
+    for(const name of ['prev','next']){const b=shareDialog.querySelector(`[data-action="share-${name}"]`);b.hidden=total===1;b.disabled=name==='prev'?shareIndex===0:part===total;}
+    shareState(total>1?`요청이 길어 ${total}묶음으로 나눴습니다. 각 묶음을 주석으로 보내 주세요. 내용을 생략하지 않았습니다.`:'주석 창에서 확인한 뒤 보내 주세요. 요청 목록은 그대로 보관됩니다.');
+  }
+  function requestShareAnnotation(){
+    if(!annotationAvailable()){shareState('이 브라우저는 ChatGPT 주석을 지원하지 않습니다. 앱 안의 브라우저에서 열거나 요청 복사·파일 저장을 사용하세요.');return;}
+    const range=document.createRange();range.selectNodeContents($('#request-share-text'));
+    try{const result=document.oai.annotation.request(range,{initialComment:`모아둔 수정 요청 ${shareSnapshot.count}개를 검토하고 반영해줘.${shareParts.length>1?` 묶음 ${shareIndex+1}/${shareParts.length}, 나머지 묶음까지 받은 뒤 진행해줘.`:''} 각 대상 ID와 버전을 확인하고 요청 외 내용은 보존해줘.`});
+      shareState(result?.accepted?'주석 요청이 수락됨 · 주석 창에서 보내기를 눌러 주세요. 전송 완료는 아직 확인되지 않았습니다.':'주석을 열지 못했습니다. 열린 주석 창이나 사이트의 주석 허용 설정을 확인한 뒤 다시 눌러 주세요. 요청은 보관됩니다.');
+    }catch{shareState('주석을 열지 못했습니다. 다시 시도하거나 요청 복사·파일 저장을 사용하세요. 요청은 보관됩니다.');}
+  }
+  function shareQueue(){
+    if(!queue.length)throw Error('먼저 수정 요청을 목록에 추가해 주세요.');
+    // The 240-unit comment is only a prompt. The actual requests travel as selected text.
+    // Range requests accept <=20,000 UTF-16 units; split explicitly without dropping content.
+    const text=JSON.stringify(JSON.parse(batch()),(k,v)=>typeof v==='string'?v.replace(/data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+/gi,'embedded-image: 원본 편집본 참조'):v,2);
+    shareSnapshot={deckId:doc.deckId,revision:doc.revision,count:queue.length};shareParts=[];shareIndex=0;
+    for(let start=0;start<text.length;){let end=Math.min(start+18000,text.length);if(end<text.length&&/[\uD800-\uDBFF]/.test(text[end-1]))end--;shareParts.push(text.slice(start,end));start=end;}
+    ui?.close();renderShare();if(!shareDialog.open)shareDialog.show();requestShareAnnotation();
+  }
+  function renderQueue() {$('#queue-count').textContent=queue.length;$('#queue-annotation-button').disabled=!queue.length;$('#request-list').replaceChildren();for(const r of queue){const li=document.createElement('li'),label=document.createElement('p'),input=document.createElement('textarea'),remove=document.createElement('button');label.textContent=`${r.context.page.title} · ${{text:'글자',image:'사진',youtube:'영상',block:'화면 블록',scene:'장면'}[r.context.object.type]||'선택 요소'}`;input.value=r.request;input.setAttribute('aria-label','저장된 수정 요청');input.addEventListener('change',()=>{r.request=input.value;persist();$('#batch-copy').value=batch();});remove.textContent='이 요청 삭제';remove.type='button';remove.addEventListener('click',()=>{queue=queue.filter(x=>x.id!==r.id);persist();renderQueue();});li.append(label,input,remove);$('#request-list').append(li);}$('#batch-copy').value=batch();ui?.refresh();}
   function file(accept,fn) {const input=$('#edit-file');input.accept=accept;input.value='';input.onchange=()=>{if(input.files[0]?.size>16000000){status('파일은 16MB 이하로 줄여 주세요.');return;}if(input.files[0])Promise.resolve(fn(input.files[0])).catch(e=>status(e.message));};input.click();}
   async function image(replace=false) {file('image/png,image/jpeg,image/webp',async f=>{if(f.size>2000000)throw Error('사진은 2MB 이하로 줄여 주세요.');const value=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(f);});if(!M.safeImage(value))throw Error('PNG/JPEG/WebP만 가능합니다.');const o=target();mutate(d=>{const p=d.pages.find(p=>p.id===current().id);if(replace&&o?.type==='image')p.objects.find(x=>x.id===o.id).content=value;else {const added={id:M.uid('obj'),key:M.uid('image'),type:'image',content:value,style:{width:70,height:300},behavior:{},deleted:false};selected=added.id;p.objects.push(added);}});});}
   function previewPatch(patch) {
@@ -161,6 +190,10 @@
     if(action==='object-delete'&&o)mutate(d=>{const x=d.pages.find(x=>x.id===p.id).objects.find(x=>x.id===o.id);x.deleted=true;if(x.type==='image')x.content='assets/brand/vanollim-pixel.png';if(x.type==='youtube')x.content='https://youtu.be/jNQXAC9IVRw'; });
     if(action==='behavior-save'&&o){mutate(d=>{d.pages.find(x=>x.id===p.id).objects.find(x=>x.id===o.id).behavior={tooltip:$('#object-tooltip').value,explain:$('#object-explain').value};});setBehaviorPreview(true);status('동작을 적용했습니다. 화면에서 호버/클릭으로 확인하세요.');}
     if(action==='queue-add'&&o){const request=$('#change-request').value.trim();if(!request)throw Error('변경 요청을 적어 주세요.');queue.push({id:M.uid('request'),request,trigger:$('#request-trigger').value,context:context(p,o)});persist();renderQueue();ui?.refresh();$('#queue-details').open=true;$('#change-request').value='';}
+    if(action==='queue-annotation')shareQueue();
+    if(action==='share-annotation')requestShareAnnotation();
+    if(action==='share-close')shareDialog.close();
+    if(action==='share-prev'||action==='share-next'){shareIndex=Math.max(0,Math.min(shareParts.length-1,shareIndex+(action==='share-next'?1:-1)));renderShare();}
     if(action==='annotation'&&o){const annotation=document.oai?.annotation;const result=annotation?.request?.(document.querySelector(`[data-object-id="${o.id}"]`),{initialComment:$('#change-request').value.slice(0,240),metadata:metadata(p,o)});status(result?.accepted?'주석 요청이 수락됨 · 실제 전송은 주석 창에서 확인하세요.':'주석을 열지 못했습니다. 요청 복사·파일 저장을 사용하세요.');}
     if(action==='copy'){const text=batch();$('#batch-copy').value=text;try{await navigator.clipboard.writeText(text);status('요청 복사됨 · 편집본과 원본 소스도 전달하세요.');}catch{$('#batch-copy').focus();$('#batch-copy').select();status('아래 요청 내용을 직접 복사하세요.');}}
     if(action==='requests-export')download(`${doc.deckId}-requests.json`,batch());
@@ -236,6 +269,8 @@
   document.addEventListener('keydown',e=>{if(document.querySelector('dialog[open]'))return;if(editing&&e.key==='Escape'){if(resizeGesture){e.preventDefault();resizeGesture.cancel();}else if(behaviorPreview)setBehaviorPreview(false);else setEditing(false);return;}if(editing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!e.target.closest('input,textarea,[contenteditable]')){e.preventDefault();root.querySelector(`[data-action="${e.shiftKey?'redo':'undo'}"]`).click();}});
   document.addEventListener('workshop:slide',()=>{if(editing){if(panelPage!==api.currentId())selected=null;panelPage=api.currentId();renderPanel();highlight();}});
   $('#annotation-button').hidden=typeof document.oai?.annotation?.request!=='function';
+  $('#queue-annotation-button').hidden=!annotationAvailable();
+  $('#queue-annotation-help').textContent=annotationAvailable()?'모아둔 요청을 주석 창에서 확인한 뒤 보내세요.':'이 브라우저는 ChatGPT 주석을 지원하지 않습니다. 요청 복사·파일 저장을 사용할 수 있습니다.';
   // Read-only integration API for agents/tests; mutations use validated revision-checked patches.
   window.WorkshopEditor={get document(){return clone(doc);},get requests(){return clone(queue);},previewPatch,exportRequests:batch};
   // Private UI bridge: all writes still pass model validation, history and revision checks.

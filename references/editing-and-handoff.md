@@ -60,9 +60,9 @@
 
 [OpenAI 공식 Annotations Extensibility 문서](https://learn.chatgpt.com/docs/annotations-extensibility)를 현재 환경에서 확인한다. 현재 어댑터는 `document.oai?.annotation?.request`를 기능 탐지하고, 실제 사용자 클릭 안에서 연결된 DOM 대상을 전달한다. 각 페이지는 `oai-annotation-container`, 요소는 `oai-annotatable` 및 작은 평면 metadata를 사용한다.
 
-metadata는 5개 속성(deckId/revision/pageId/objectId/objectType)만 사용하고 문자열은 제한 안에 둔다. 전체 요청은 자체 파일로 전달한다. `initialComment`는 240 UTF-16 단위까지다. `accepted`는 요청 수락 여부이며 실제 편집기 표시·전송·AI 코드 수정·저장·배포를 보증하지 않는다. 등록된 custom controls로 정본을 미리 덮어쓰지 않는다(이번 어댑터는 custom controls 미사용).
+단일 요소 metadata는 5개 속성(deckId/revision/pageId/objectId/objectType)만 사용하고 문자열은 제한 안에 둔다. `initialComment`는 240 UTF-16 단위까지이므로 전체 요청의 운반 수단으로 쓰지 않는다. 상단 수정 요청 목록의 **모두 ChatGPT 주석으로 보내기**는 현재 목록과 대상 문맥을 읽기 전용 전달 창에 고정하고, 실제 사용자 클릭에서 그 본문을 DOM Range로 선택해 한 번에 주석을 요청한다. Range 요청에는 metadata를 넣지 않고 본문에 덱/버전/페이지/요소 ID를 포함한다. 내장 이미지 바이너리는 참조로 대체한다. 20,000 UTF-16 단위 한계보다 작게 명시적으로 분할하고, 여러 묶음이면 사용자가 각 묶음을 보낸 뒤 합쳐 검토하도록 안내한다. 자동 축약/잘라내기나 숨긴 DOM 전달은 하지 않는다. 목록은 수락/거절/취소와 무관하게 보존하며 수락을 전송 완료로 표시하지 않는다. `accepted`는 요청 수락 여부이며 실제 편집기 표시·전송·AI 코드 수정·저장·배포를 보증하지 않는다. 등록된 custom controls로 정본을 미리 덮어쓰지 않는다(이번 어댑터는 custom controls 미사용).
 
-지원하지 않으면 주석 버튼을 숨기고 자체 요청 목록과 복사/파일 저장을 제공한다. API가 있어도 거절되거나 던진 예외는 대체 경로로 안내한다. 자동 조작 중 브라우저가 주석 요청을 거절할 수 있으므로, 실제 사용자 전송 확인 없이 ‘연동 완료/자동 수정’이라고 말하지 않는다.
+localhost는 지원 환경에 포함되지만, 이 API는 ChatGPT 데스크톱 앱의 지원되는 내장 브라우저에 의존한다. 일반 브라우저나 Claude용 공통 전송 API가 아니다. 지원하지 않으면 주석 버튼을 숨기고 이유를 표시하며 자체 요청 목록과 복사/파일 저장을 제공한다. Claude Code처럼 같은 프로젝트 파일을 읽는 환경을 위한 디스크 요청함/연결기는 아직 구현하지 않았다. Claude 웹에 localhost 주소를 주는 것만으로 요청이나 소스가 전달된다고 설명하지 않는다. API가 있어도 거절되거나 던진 예외는 대체 경로로 안내한다. 자동 조작 중 브라우저가 주석 요청을 거절할 수 있으므로, 실제 사용자 전송 확인 없이 ‘연동 완료/자동 수정’이라고 말하지 않는다.
 
 ## 전달과 대본·시간
 
