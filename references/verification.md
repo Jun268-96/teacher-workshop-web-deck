@@ -93,4 +93,6 @@ node --test <skill-dir>/scripts/*.test.mjs
 
 `node --test scripts/resize.test.mjs`는 네 모서리로 텍스트 박스와 폰트를 같은 비율로 확대·축소하고 반대 모서리의 위치, 폰트 최소·최대 크기, 실행 취소/재실행/새로고침/오프라인 HTML에서의 폰트 복원을 확인한다. 사진 비율 유지, 오프라인 HTML에서 핸들 제거, Escape/터치 취소 시 폰트 복원, 태블릿의 실제 터치 드래그도 검사한다. `WORKSHOP_RESIZE_OUTPUT=<private-directory>`로 캡처를 남긴다. 이동 검사는 모서리가 아닌 박스 안을 잡아 크기 조절과 구분한다.
 
+`node --test scripts/alignment.test.mjs`는 실제 드래그 중 페이지 중앙/다른 요소 가장자리·중앙의 가이드와 맞춰진 좌표를 측정한다. 텍스트·사진, 실행 취소/재실행/새로고침, Alt 해제, 터치 허용 오차와 취소, 발표용 HTML의 가이드 제거를 확인한다. `WORKSHOP_ALIGNMENT_OUTPUT=<private-directory>`로 드래그 중 캡처를 남긴다. 순수 포인터 이동 거리 검사는 Alt로 자동 맞춤을 끈 뒤 수행한다.
+
 주석 전송이나 외부 AI의 답변 품질·YouTube 실제 재생·공개 HTTPS 운영·물리 태블릿은 이 로컬 E2E의 증거가 아니다. 그런 연동은 해당 환경에서 별도로 확인한다.

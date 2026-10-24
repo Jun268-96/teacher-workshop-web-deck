@@ -37,6 +37,16 @@
   const resizeFrame=document.createElement('div');resizeFrame.id='edit-resize-frame';resizeFrame.dataset.editorUi='';resizeFrame.hidden=true;
   for(const [corner,label] of [['nw','왼쪽 위'],['ne','오른쪽 위'],['sw','왼쪽 아래'],['se','오른쪽 아래']]){const handle=document.createElement('button');handle.type='button';handle.dataset.resizeCorner=corner;handle.setAttribute('aria-label',`${label} 모서리 크기 조절`);handle.title=`${label} 모서리를 끌어 크기 조절`;resizeFrame.append(handle);}
   document.body.append(resizeFrame);
+  const guides=document.createElement('div');guides.id='edit-alignment-guides';guides.dataset.editorUi='';guides.setAttribute('aria-hidden','true');guides.hidden=true;
+  for(const axis of ['x','y']){const line=document.createElement('i');line.dataset.guideAxis=axis;line.hidden=true;guides.append(line);}document.body.append(guides);
+  function hideGuides(){guides.hidden=true;for(const line of guides.children)line.hidden=true;}
+  function showGuide(axis,match,rect,frame){
+    const line=guides.querySelector(`[data-guide-axis="${axis}"]`);line.hidden=!match;if(!match)return;
+    const clip=$('#deck').getBoundingClientRect(),vertical=axis==='x',peer=match.rect;
+    const start=Math.max(vertical?frame.top:frame.left,vertical?clip.top:clip.left,0,match.kind==='page'?-Infinity:Math.min(vertical?rect.top:rect.left,vertical?peer.top:peer.left)-12);
+    const end=Math.min(vertical?frame.bottom:frame.right,vertical?clip.bottom:clip.right,vertical?innerHeight:innerWidth,match.kind==='page'?Infinity:Math.max(vertical?rect.bottom:rect.right,vertical?peer.bottom:peer.right)+12);
+    Object.assign(line.style,{left:(vertical?match.value:start)+'px',top:(vertical?start:match.value)+'px',width:(vertical?0:Math.max(0,end-start))+'px',height:(vertical?Math.max(0,end-start):0)+'px'});line.dataset.guideKind=match.kind;guides.hidden=false;
+  }
   let resizeObserved=null,resizeGesture=null;
   const resizeObserver=new ResizeObserver(()=>syncResizeFrame());
   function syncResizeFrame(){
@@ -103,7 +113,7 @@
     $('#object-tooltip').value=o.behavior.tooltip||'';$('#object-explain').value=o.behavior.explain||'';
     $('[data-action="image-replace"]').hidden=o.type!=='image';
   }
-  function setBehaviorPreview(on){behaviorPreview=on&&editing;document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'동작 시험 중 · 화면에서 호버하거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 모서리로 크기를 조절하세요. 더블클릭하면 글자를 수정합니다.';api.hideTooltip?.();syncResizeFrame();}
+  function setBehaviorPreview(on){behaviorPreview=on&&editing;hideGuides();document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'동작 시험 중 · 화면에서 호버하거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 모서리로 크기를 조절하세요. 더블클릭하면 글자를 수정합니다.';api.hideTooltip?.();syncResizeFrame();}
   function setEditing(on) { editing=on;setBehaviorPreview(false);panelPage=api.currentId();document.body.classList.toggle('is-editing',on);$('#edit-tools').hidden=!on;$('#edit-toggle').setAttribute('aria-pressed',String(on));$('#edit-toggle').textContent=on?'편집 중':'편집';api.layoutMoved?.();renderPanel();highlight(); }
   function choose(id) { selected=id;renderPanel();highlight(); }
   function download(name,content,type='application/json') {const a=document.createElement('a');const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -168,21 +178,29 @@
     const o=target(),page=el.closest('.slide'),box=page.getBoundingClientRect(),original=el.getBoundingClientRect(),computed=getComputedStyle(el);
     const parts=(computed.translate||'0 0').split(' '),px=(v,size)=>v?.endsWith('%')?parseFloat(v)*size/100:parseFloat(v)||0;
     const start={x:e.clientX,y:e.clientY,ox:px(parts[0],el.offsetWidth),oy:px(parts[1],el.offsetHeight),width:el.style.width};
+    const peers=[...page.querySelectorAll('[data-object-id]')].filter(n=>n!==el&&!el.contains(n)&&!n.contains(el));
     let moved=false,fitWidth;
     el.setPointerCapture(e.pointerId);
     function position(ev){const rect=el.getBoundingClientRect(),pad=4;const baseX=original.left,baseY=original.top;
-      const x=Math.min(box.right-pad-rect.width-baseX,Math.max(box.left+pad-baseX,ev.clientX-start.x));
-      const y=Math.min(box.bottom-pad-rect.height-baseY,Math.max(box.top+pad-baseY,ev.clientY-start.y));return{x:start.ox+x,y:start.oy+y};}
+      let x=Math.min(box.right-pad-rect.width-baseX,Math.max(box.left+pad-baseX,ev.clientX-start.x)),y=Math.min(box.bottom-pad-rect.height-baseY,Math.max(box.top+pad-baseY,ev.clientY-start.y));
+      hideGuides();if(!ev.altKey){
+        const targets={x:[{value:(box.left+box.right)/2,rect:box,kind:'page'}],y:[{value:(box.top+box.bottom)/2,rect:box,kind:'page'}]};
+        for(const peer of peers){if(!peer.getClientRects().length||getComputedStyle(peer).visibility==='hidden')continue;const r=peer.getBoundingClientRect();if(!r.width||!r.height)continue;for(const value of [r.left,(r.left+r.right)/2,r.right])targets.x.push({value,rect:r,kind:'object'});for(const value of [r.top,(r.top+r.bottom)/2,r.bottom])targets.y.push({value,rect:r,kind:'object'});}
+        const nearest=(axis,origin,size,min,max)=>{let best=null;for(const target of targets[axis])for(const anchor of [origin,origin+size/2,origin+size]){const delta=target.value-anchor,distance=Math.abs(delta);if(distance<=(e.pointerType==='touch'?10:6)&&origin+delta>=min-.01&&origin+size+delta<=max+.01&&(!best||distance<best.distance))best={...target,delta,distance};}return best;};
+        const sx=nearest('x',baseX+x,rect.width,box.left+pad,box.right-pad),sy=nearest('y',baseY+y,rect.height,box.top+pad,box.bottom-pad);x+=sx?.delta||0;y+=sy?.delta||0;
+        const final={left:baseX+x,top:baseY+y,right:baseX+x+rect.width,bottom:baseY+y+rect.height};showGuide('x',sx,final,box);showGuide('y',sy,final,box);
+      }
+      return{x:start.ox+x,y:start.oy+y};}
     const move=ev=>{
-      if(!moved&&Math.hypot(ev.clientX-start.x,ev.clientY-start.y)>4){moved=true;
+      if(!moved&&Math.hypot(ev.clientX-start.x,ev.clientY-start.y)>4){moved=true;document.body.classList.add('is-dragging');
         // Default stretched headings should move like text boxes. Explicit widths stay intact.
         if(o.type==='text'&&o.style.width===undefined){const range=document.createRange();range.selectNodeContents(el);const width=range.getBoundingClientRect().width;const parent=el.parentElement,parentStyle=getComputedStyle(parent),parentWidth=parent.clientWidth-parseFloat(parentStyle.paddingLeft)-parseFloat(parentStyle.paddingRight);if(width>0&&parentWidth>0){fitWidth=Math.max(10,Math.min(100,(width+4)/parentWidth*100));el.style.width=fitWidth+'%';}}
       }
       if(!moved)return;ev.preventDefault();const pos=position(ev);el.style.translate=`${pos.x}px ${pos.y}px`;syncResizeFrame();
     };
-    function cleanup(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',finish);el.removeEventListener('pointercancel',cancel);}
-    const finish=ev=>{cleanup();if(!moved)return;const pos=position(ev);mutate(d=>Object.assign(d.pages.find(p=>p.id===current().id).objects.find(n=>n.id===o.id).style,{x:0,y:0,offsetX:pos.x/box.width*100,offsetY:pos.y/box.height*100,...(fitWidth===undefined?{}:{width:fitWidth})}));};
-    const cancel=()=>{cleanup();el.style.width=start.width;el.style.translate=`${start.ox}px ${start.oy}px`;};
+    function cleanup(){el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',finish);el.removeEventListener('pointercancel',cancel);document.body.classList.remove('is-dragging');hideGuides();}
+    const finish=ev=>{const pos=moved?position(ev):null;cleanup();if(pos)mutate(d=>Object.assign(d.pages.find(p=>p.id===current().id).objects.find(n=>n.id===o.id).style,{x:0,y:0,offsetX:pos.x/box.width*100,offsetY:pos.y/box.height*100,...(fitWidth===undefined?{}:{width:fitWidth})}));};
+    const cancel=()=>{cleanup();el.style.width=start.width;el.style.translate=`${start.ox}px ${start.oy}px`;syncResizeFrame();};
     el.addEventListener('pointermove',move);el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',cancel);
   });
   resizeFrame.addEventListener('click',e=>e.stopPropagation());

@@ -11,7 +11,7 @@ async function setup(t,slide='message'){
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'workshop-movement-')),root=path.join(dir,'deck');await fs.cp(starter,root,{recursive:true});const server=await serve(root),{chromium}=await loadPlaywright(root),browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(10000);
  t.after(async()=>{await browser.close();await new Promise(r=>server.server.close(r));await fs.rm(dir,{recursive:true,force:true});assert.deepEqual(errors,[]);});await page.goto(server.url+'?edit=1#'+slide);await page.locator('#edit-toggle').click();return {page,browser,dir,server};
 }
-async function drag(p,node,dx,dy){const before=await node.boundingBox(),x=before.x+Math.min(30,before.width/2),y=before.y+Math.min(30,before.height/2);await p.mouse.move(x,y);await p.mouse.down();await p.mouse.move(x+dx,y+dy,{steps:12});await p.mouse.up();return {before,after:await node.boundingBox()};}
+async function drag(p,node,dx,dy){const before=await node.boundingBox(),x=before.x+Math.min(30,before.width/2),y=before.y+Math.min(30,before.height/2);await p.keyboard.down('Alt');await p.mouse.move(x,y);await p.mouse.down();await p.mouse.move(x+dx,y+dy,{steps:12});await p.mouse.up();await p.keyboard.up('Alt');return {before,after:await node.boundingBox()};}
 async function section(p,label){const s=p.locator('summary').filter({hasText:new RegExp('^'+label+'$')});if(await s.locator('..').getAttribute('open')===null)await s.click();}
 async function action(p,name){await p.locator(`[data-action="${name}"]`).click();}
 const doc=p=>p.evaluate(()=>WorkshopEditor.document);

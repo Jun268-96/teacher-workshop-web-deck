@@ -10,7 +10,7 @@
   let index = 0, tocOpenedByHover = false;
   const editBlocked=()=>document.body.classList.contains('is-editing')&&!document.body.classList.contains('is-behavior-preview');
   function layoutMoved(){
-    if(document.body.classList.contains('is-resizing'))return;
+    if(document.body.classList.contains('is-resizing')||document.body.classList.contains('is-dragging'))return;
     const page=slides[index];if(!page||page.hidden)return;const frame=page.getBoundingClientRect();
     const moved=[...page.querySelectorAll('[data-move-x]')];moved.forEach(n=>n.style.translate='none');
     for(const node of moved){const rect=node.getBoundingClientRect();const clamp=(value,min,max)=>Math.max(min,Math.min(Math.max(min,max),value));const x=clamp(Number(node.dataset.moveX)*frame.width/100,frame.left+4-rect.left,frame.right-4-rect.right),y=clamp(Number(node.dataset.moveY)*frame.height/100,frame.top+4-rect.top,frame.bottom-4-rect.bottom);node.style.translate=`${x}px ${y}px`;}document.dispatchEvent(new Event('workshop:layout'));
