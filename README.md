@@ -2,7 +2,7 @@
 
 교사 연수용 **웹 발표자료**를 기획하고, 반올림 디지털 스쿨 브랜드로 제작·검증·배포하는 AI 에이전트 스킬입니다.
 
-[템플릿 체험](https://vanollim-deck-harness-20261023.hhj96916.workers.dev/) · [스킬 지침](SKILL.md) · [ZIP 다운로드](https://github.com/Jun268-96/teacher-workshop-web-deck/archive/refs/heads/main.zip)
+[이전 정적 템플릿 체험](https://vanollim-deck-harness-20261023.hhj96916.workers.dev/) · [스킬 지침](SKILL.md) · [ZIP 다운로드](https://github.com/Jun268-96/teacher-workshop-web-deck/archive/refs/heads/main.zip)
 
 ## 사용하기
 
@@ -47,7 +47,7 @@
 | `scripts/create-deck.mjs` | 기존 폴더를 덮어쓰지 않는 프로젝트 생성기 |
 | `scripts/harness.test.mjs` | 격리된 환경에서 실행하는 회귀 검사 |
 
-7개 레이아웃은 구성 예시입니다. 실제 연수를 7장으로 제한하지 않습니다. 설문·Q&A·참가자 화면·실시간 서버는 요청에 맞춰 추가하는 선택 모듈이며 기본 템플릿에 구현돼 있지 않습니다.
+7개 레이아웃은 구성 예시입니다. 실제 연수를 7장으로 제한하지 않습니다. 편집·AI 수정 요청·다섯 참여 블록과 Node 참조 서버를 포함합니다. 참여 기능은 선택 사항이며 공개 서버는 별도 준비가 필요합니다. 위 공개 체험 링크에는 이번 편집·참여 기능을 아직 배포하지 않았습니다.
 
 ## 직접 실행하기
 
@@ -70,12 +70,30 @@ npm run dev
 스킬 자체의 회귀 검사는 아래 명령으로 실행합니다. 브라우저 관련 검사는 사용 가능한 Playwright가 있어야 실행됩니다. 누락 시 해당 검사는 생략되므로 결과의 skip 수를 확인하세요.
 
 ```sh
-node --test scripts/harness.test.mjs
+node --test scripts/*.test.mjs
 ```
 
 브라우저와 배포 도구가 이미 제공된 환경에서는 `WORKSHOP_PLAYWRIGHT_MODULE`, `WORKSHOP_WRANGLER_CLI`로 기존 설치를 연결할 수 있습니다. [검증 절차와 범위](references/verification.md)를 참고하세요.
 
 배포 전에는 정적 검사 → 실제 브라우저 검사 → 캡처 검토 → 배포 사전 검사 순으로 진행합니다. 실패하거나 파일이 바뀌면 이전 결과로 배포할 수 없습니다. 공개 후에는 빌드 일치와 화면·동작을 다시 확인합니다.
+
+## 화면에서 수정하기
+
+로컬 발표 주소 뒤에 `?edit=1`을 붙이고 ‘편집’을 누르세요. 대상을 클릭해 직접 고치거나 AI 요청을 다섯 개씩 모을 수 있습니다. 요청·편집본·소스 ZIP을 AI에게 함께 주고, 받은 데이터 변경안을 미리 본 뒤 취소/확정합니다. ChatGPT 주석을 사용할 수 없는 브라우저에서는 복사/JSON 저장을 사용합니다. 편집본과 발표용 단일 HTML을 따로 저장할 수 있습니다.
+
+```sh
+node scripts/create-deck.mjs --dest ../editor-live-demo --example editor-live
+# 생성한 프로젝트에서 npm run dev → /?edit=1
+# 참여 서버는 npm run live → /live-host/ → 회차 생성 → 참가자 코드/URL 공유
+```
+
+원본 전달 ZIP은 의존성 없이 생성합니다.
+
+```sh
+node scripts/package-deck.mjs --project ../editor-live-demo --dest ../demo-source.zip
+```
+
+[편집·AI 요청·전달](references/editing-and-handoff.md) · [참여 서버 실행·권한·운영 경계](references/participation-runtime.md) · [이전 버전에서 이동](references/migration.md) · [구현 범위와 남은 기능](references/implementation-status.md)
 
 ## 브랜드와 글꼴
 

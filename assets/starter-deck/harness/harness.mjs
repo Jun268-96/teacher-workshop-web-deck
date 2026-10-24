@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkProject, doctor, setup, serve, fingerprint, readJson, writeJson, exists, resolveTool, runTool, updateDeploymentEvidence } from './lib.mjs';
+import { checkProject, doctor, setup, serve, fingerprint, readJson, writeJson, exists, resolveTool, runTool, updateDeploymentEvidence, readConfig } from './lib.mjs';
 import { verifyBrowser } from './verify-browser.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -59,6 +59,8 @@ async function main() {
     const check=await gate(root), configFile=path.join(root,'wrangler.json');
     if(!await exists(configFile)) throw new Error('No deployment target. Create a new named project or configure the intended account/target first.');
     const config=await readJson(configFile);
+    const deckConfig=readConfig(await fs.readFile(path.join(root,'public/config.js'),'utf8'));
+    if(deckConfig.modules?.live)throw new Error('A live backend needs a backend-specific release workflow; static deployment does not deploy server/live.mjs.');
     if(!/^[a-z][a-z0-9-]{1,62}$/.test(config.name) || config.assets?.directory!=='./public' || config.routes || config.main || config.durable_objects) throw new Error('This static deploy harness requires a named public/-only target. Use the backend-specific release workflow for a live module.');
     const cli=resolveTool(root,'wrangler');
     const deployArgs=['deploy','--config',configFile,'--keep-vars'];

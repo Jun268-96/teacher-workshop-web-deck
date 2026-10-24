@@ -24,6 +24,7 @@ export async function readJson(file) { return JSON.parse(await fs.readFile(file,
 export async function writeJson(file, data) { await fs.mkdir(path.dirname(file), { recursive: true }); await fs.writeFile(file, JSON.stringify(data, null, 2) + '\n'); }
 export async function fingerprint(root) {
   const files = [...await filesUnder(path.join(root, 'public')), ...await filesUnder(path.join(root, 'harness'))];
+  if (await exists(path.join(root,'server'))) files.push(...await filesUnder(path.join(root,'server')));
   for (const name of ['qa/flows.json','package.json','wrangler.json']) if (await exists(path.join(root,name))) files.push(path.join(root,name));
   const hash = crypto.createHash('sha256');
   for (const file of files.sort()) {

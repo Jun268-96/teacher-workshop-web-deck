@@ -31,6 +31,7 @@ test('scaffolding preserves original and rejects an existing destination',async 
   assert.notEqual(second.status,0);assert.equal(await fs.readFile(path.join(dest,'keep.txt'),'utf8'),'user work');
   assert.equal(JSON.parse(await fs.readFile(path.join(dest,'wrangler.json'))).assets.directory,'./public');
   assert.ok(await fs.stat(path.join(dest,'public/assets/fonts/Pretendard-LICENSE.txt')));
+  const ids=[];for(const folder of ['another','third']){const next=path.join(parent,folder),made=spawnSync(process.execPath,[path.join(skill,'scripts/create-deck.mjs'),'--dest',next],{encoding:'utf8'});assert.equal(made.status,0,made.stderr);ids.push((await fs.readFile(path.join(next,'public/config.js'),'utf8')).match(/deckId: "([^"]+)"/)[1]);}assert.notEqual(ids[0],ids[1]);
 });
 test('doctor is read-only and missing dependencies do not install themselves',async t=>{
   const root=await fixture(t),before=await fingerprint(root);

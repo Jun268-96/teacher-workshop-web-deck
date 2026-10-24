@@ -2,7 +2,7 @@
   'use strict';
   const config = window.WORKSHOP_CONFIG || {};
   const deck = document.querySelector('#deck');
-  const slides = [...deck.querySelectorAll(':scope > .slide')];
+  let slides = [...deck.querySelectorAll(':scope > .slide')];
   const prev = document.querySelector('[data-prev]');
   const next = document.querySelector('[data-next]');
   const toggle = document.querySelector('#toc-toggle');
@@ -13,9 +13,9 @@
     catch { return null; }
   };
   document.querySelectorAll('[data-config]').forEach(el => { if (config[el.dataset.config]) el.textContent = config[el.dataset.config]; });
-  document.querySelectorAll('[data-logo]').forEach(el => { if (config.logo && safeLink(config.logo)) el.src = config.logo; el.alt = config.logoAlt || ''; });
+  document.querySelectorAll('[data-logo]').forEach(el => { if (!el.src.startsWith('data:') && config.logo && safeLink(config.logo)) el.src = config.logo; el.alt = config.logoAlt || ''; });
   document.querySelectorAll('[data-duration]').forEach(el => { el.textContent = config.durationMinutes || 15; });
-  document.querySelectorAll('[data-mascots]').forEach(el => { el.hidden = config.modules?.mascots !== true; });
+  document.querySelectorAll('[data-mascots]:not(body)').forEach(el => { el.hidden = config.modules?.mascots !== true; });
   document.body.dataset.mascots = config.modules?.mascots === true ? 'on' : 'off';
   document.title = config.title || document.title;
   function setToc(open) { contents.hidden = !open; toggle.setAttribute('aria-expanded', String(open)); }
@@ -36,12 +36,20 @@
     document.querySelector('#deck-status').textContent = `${index + 1} / ${slides.length} · ${active.dataset.title}`;
     document.dispatchEvent(new CustomEvent('workshop:slide', { detail: { id: active.id, index } }));
   }
-  slides.forEach((slide, i) => {
+  function rebuildToc() { contents.replaceChildren(); slides.forEach((slide, i) => {
     const button = document.createElement('button'); button.type = 'button'; button.textContent = `${i + 1}. ${slide.dataset.title}`;
     button.addEventListener('click', () => { showSlide(i); toggle.focus(); }); contents.append(button);
-  });
+  }); }
+  rebuildToc();
   prev.addEventListener('click', () => showSlide(index - 1)); next.addEventListener('click', () => showSlide(index + 1));
-  document.querySelectorAll('[data-go]').forEach(el => el.addEventListener('click', () => { const i = slides.findIndex(s => s.id === el.dataset.go); if (i >= 0) showSlide(i); }));
+  deck.addEventListener('click', event => {
+    if(document.body.classList.contains('is-editing')) return;
+    const go=event.target.closest('[data-go]');
+    if(go) {const i=slides.findIndex(s=>s.id===go.dataset.go);if(i>=0)showSlide(i);}
+    const explain=event.target.closest('[data-explain]');
+    if(explain) {const dialog=document.createElement('dialog'),text=document.createElement('p'),close=document.createElement('button');text.textContent=explain.dataset.explain;close.textContent='닫기';close.onclick=()=>dialog.close();dialog.append(text,close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();}
+  });
+  deck.addEventListener('keydown',e=>{if(!document.body.classList.contains('is-editing')&&['Enter',' '].includes(e.key)&&e.target.matches('[data-explain]')){e.preventDefault();e.target.click();}});
   toggle.addEventListener('click', () => setToc(contents.hidden));
   const tocAnchor = document.querySelector('.toc-anchor');
   tocAnchor.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') setToc(true); });
@@ -51,7 +59,7 @@
   window.addEventListener('hashchange', () => showSlide(Math.max(0, fromHash()), false));
   document.addEventListener('keydown', async event => {
     if (event.key === 'Escape') { setToc(false); return; }
-    if (event.altKey || event.ctrlKey || event.metaKey || document.querySelector('dialog[open],[role=dialog][aria-modal=true]')) return;
+    if (document.body.classList.contains('is-editing') || event.altKey || event.ctrlKey || event.metaKey || document.querySelector('dialog[open],[role=dialog][aria-modal=true]')) return;
     if (event.target.closest('input,textarea,select,[contenteditable]:not([contenteditable=false]),[role=textbox]')) return;
     if (!contents.hidden && tocAnchor.contains(event.target)) return;
     if (event.target.closest('[role=tab]') && ['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
@@ -65,36 +73,35 @@
       catch { document.querySelector('#deck-status').textContent = '브라우저에서 전체화면을 허용해 주세요.'; }
     }
   });
-  const tabs = [...document.querySelectorAll('[data-tab]')];
   function chooseTab(tab) {
-    tabs.forEach(button => { const selected = button === tab; button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1; });
-    document.querySelectorAll('[data-panel]').forEach(panel => { panel.hidden = panel.dataset.panel !== tab.dataset.tab; });
+    const page=tab.closest('.slide');
+    page.querySelectorAll('[data-tab]').forEach(button=>{const selected=button===tab;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});
+    page.querySelectorAll('[data-panel]').forEach(panel=>{panel.hidden=panel.dataset.panel!==tab.dataset.tab;});
   }
-  tabs.forEach((tab, i) => {
-    tab.addEventListener('click', () => chooseTab(tab));
-    tab.addEventListener('keydown', event => {
-      let target;
-      if (event.key === 'ArrowRight') target = (i + 1) % tabs.length;
-      if (event.key === 'ArrowLeft') target = (i - 1 + tabs.length) % tabs.length;
-      if (event.key === 'Home') target = 0;
-      if (event.key === 'End') target = tabs.length - 1;
-      if (target !== undefined) { event.preventDefault(); event.stopPropagation(); chooseTab(tabs[target]); tabs[target].focus(); }
-    });
+  function initialiseTabs() { slides.forEach(p=>{const tab=p.querySelector('[data-tab]');if(tab)chooseTab(tab);}); }
+  deck.addEventListener('click',e=>{
+    if(document.body.classList.contains('is-editing'))return;
+    const tab=e.target.closest('[data-tab]');if(tab)chooseTab(tab);
+    const draw=e.target.closest('#draw,[data-runtime-id="draw"]');
+    if(draw) {const page=draw.closest('.slide'),input=page.querySelector('#student-count,[data-runtime-id="student-count"]');if(input.reportValidity())page.querySelector('#draw-result,[data-runtime-id="draw-result"]').textContent=`${Math.floor(Math.random()*Number(input.value))+1}번`;}
   });
-  if (tabs.length) chooseTab(tabs[0]);
-  document.querySelector('#draw')?.addEventListener('click', () => {
-    const input = document.querySelector('#student-count');
-    if (!input.reportValidity()) return;
-    document.querySelector('#draw-result').textContent = `${Math.floor(Math.random() * Number(input.value)) + 1}번`;
+  deck.addEventListener('keydown',event=>{
+    const tab=event.target.closest('[data-tab]');if(!tab||document.body.classList.contains('is-editing'))return;
+    const tabs=[...tab.closest('.slide').querySelectorAll('[data-tab]')],i=tabs.indexOf(tab);let target;
+    if(event.key==='ArrowRight')target=(i+1)%tabs.length;
+    if(event.key==='ArrowLeft')target=(i-1+tabs.length)%tabs.length;
+    if(event.key==='Home')target=0;if(event.key==='End')target=tabs.length-1;
+    if(target!==undefined){event.preventDefault();event.stopPropagation();chooseTab(tabs[target]);tabs[target].focus();}
   });
+  initialiseTabs();
   const resources = document.querySelector('[data-resources]');
-  (config.resources || []).forEach(item => {
+  (resources?.children.length ? [] : config.resources || []).forEach(item => {
     const href = safeLink(item.href); if (!href) return;
-    const card = document.createElement('a'); card.className = 'resource-card'; card.href = href;
+    const card = document.createElement('a'); card.className = 'resource-card'; card.dataset.editKey='resource-'+resources.children.length;card.dataset.editType='block'; card.href = href;
     if (new URL(href).origin !== location.origin && !item.href.startsWith('#')) { card.target = '_blank'; card.rel = 'noopener noreferrer'; }
-    if (item.image && safeLink(item.image)) { const img = document.createElement('img'); img.src = item.image; img.alt = item.title; card.append(img); }
+    if (item.image && safeLink(item.image)) { const img = document.createElement('img'); img.src = item.image; img.alt = item.title;img.dataset.editKey=card.dataset.editKey+'-image'; card.append(img); }
     const copy = document.createElement('div'), heading = document.createElement('h3'), description = document.createElement('p');
-    heading.textContent = item.title; description.textContent = item.description || ''; copy.append(heading, description); card.append(copy); resources?.append(card);
+    heading.dataset.editKey=card.dataset.editKey+'-title';description.dataset.editKey=card.dataset.editKey+'-description';heading.textContent = item.title; description.textContent = item.description || ''; copy.append(heading, description); card.append(copy); resources?.append(card);
   });
   const timer = document.querySelector('[data-timer]');
   if (timer && config.modules?.timer) {
@@ -122,5 +129,10 @@
     timer.addEventListener('focusout', e => { if (!timer.contains(e.relatedTarget)) setTimer(false); });
     setInterval(render, 250); render();
   }
+  window.WorkshopDeck = {
+    currentId:()=>slides[index]?.id,
+    go:id=>{const i=slides.findIndex(s=>s.id===id);if(i>=0)showSlide(i);},
+    refresh:id=>{slides=[...deck.querySelectorAll(':scope > .slide')];rebuildToc();initialiseTabs();showSlide(Math.max(0,slides.findIndex(s=>s.id===id)));}
+  };
   showSlide(Math.max(0, fromHash()));
 })();
