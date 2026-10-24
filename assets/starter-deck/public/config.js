@@ -1,11 +1,11 @@
 window.WORKSHOP_CONFIG = {
-  deckId: "vanollim-workshop",
+  deckId: "workshop-template",
   title: "우리 반에 필요한 도구 만들기",
   presenter: "발표자",
-  host: "반올림 디지털 스쿨",
+  host: "",
   durationMinutes: 15,
-  logo: "assets/brand/vanollim-pixel.png",
-  logoAlt: "반올림 디지털 스쿨",
+  logo: "",
+  logoAlt: "",
   modules: { timer: true, mascots: false, live: false },
   resources: [
     { title: "작은 도구부터", description: "지금 쓰는 업무의 한 장면을 고릅니다.", image: "assets/examples/layout.svg", href: "#demo" },

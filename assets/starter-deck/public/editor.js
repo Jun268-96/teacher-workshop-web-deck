@@ -8,7 +8,7 @@
   const baseDOM = $('#deck').cloneNode(true), bases = new Map(), seed = [];
   baseDOM.querySelectorAll(':scope > .slide').forEach(page => {
     bases.set(page.id, page.cloneNode(true));
-    seed.push({id:page.id,template:page.id,title:page.dataset.title,notes:'',seconds:0,objects:[...page.querySelectorAll('[data-edit-key]')].map(el=>({id:`${page.id}-${el.dataset.editKey}`,key:el.dataset.editKey,type:el.dataset.editType || (el.tagName === 'IMG' ? 'image' : 'text'),content:el.tagName === 'IMG' ? el.getAttribute('src') : readText(el),deleted:false,style:{},behavior:{}}))});
+    seed.push({id:page.id,template:page.id,title:page.dataset.title,notes:'',seconds:0,objects:[...page.querySelectorAll('[data-edit-key]')].filter(el=>!el.matches('[data-brand-slot][hidden]')).map(el=>({id:`${page.id}-${el.dataset.editKey}`,key:el.dataset.editKey,type:el.dataset.editType || (el.tagName === 'IMG' ? 'image' : 'text'),content:el.tagName === 'IMG' ? el.getAttribute('src') : readText(el),deleted:false,style:{},behavior:{}}))});
   });
   const initial = {schema:1,templateVersion:1,deckId:window.WORKSHOP_CONFIG.deckId,revision:0,pages:seed};
   let panelPage = '', doc = clone(initial), undo = [], redo = [], queue = [], selected = null, editing = false, behaviorPreview = false, pending = null, storageOK = true;

@@ -29,7 +29,9 @@
     catch { return null; }
   };
   document.querySelectorAll('[data-config]').forEach(el => { if (config[el.dataset.config]) el.textContent = config[el.dataset.config]; });
-  document.querySelectorAll('[data-logo]').forEach(el => { if (!el.src.startsWith('data:') && config.logo && safeLink(config.logo)) el.src = config.logo; el.alt = config.logoAlt || ''; });
+  document.querySelectorAll('[data-logo]').forEach(el => { const enabled=Boolean(config.logo&&safeLink(config.logo));el.hidden=!enabled;if(enabled&&!el.src.startsWith('data:'))el.src=config.logo;el.alt=enabled?(config.logoAlt||''):''; });
+  document.querySelectorAll('[data-brand-slot][data-config="host"]').forEach(el=>{el.textContent=config.host||'';el.hidden=!el.textContent.trim();});
+  document.querySelectorAll('.cover-brand').forEach(el=>el.hidden=![...el.children].some(n=>!n.hidden));
   document.querySelectorAll('[data-duration]').forEach(el => { el.textContent = config.durationMinutes || 15; });
   document.querySelectorAll('[data-mascots]:not(body)').forEach(el => { el.hidden = config.modules?.mascots !== true; });
   document.body.dataset.mascots = config.modules?.mascots === true ? 'on' : 'off';
