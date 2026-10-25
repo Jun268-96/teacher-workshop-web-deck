@@ -23,7 +23,7 @@ async function atomicJSON(file,data){
 export async function openInbox(project){
   const root=await fs.realpath(project),privateDir=path.join(root,'.workshop-editor'),inbox=path.join(privateDir,'inbox');
   // Reuse the browser's trusted model and scene validators; submitted JSON is never evaluated.
-  const sandbox=vm.createContext({window:{},document:{readyState:'loading',addEventListener(){}}});
+  const sandbox=vm.createContext({URL,window:{},document:{readyState:'loading',addEventListener(){}}});
   for(const file of ['config.js','scene-runtime.js','deck-model.js'])vm.runInContext(await fs.readFile(path.join(root,'public',file),'utf8'),sandbox,{timeout:1000});
   const deckId=sandbox.window.WORKSHOP_CONFIG.deckId,html=await fs.readFile(path.join(root,'public/index.html'),'utf8');
   sandbox.templates=[...html.matchAll(/<section\b[^>]*>/gi)].map(m=>m[0]).filter(s=>/\bclass=["'][^"']*\bslide\b/.test(s)).map(s=>s.match(/\bid=["']([^"']+)/)?.[1]).filter(Boolean);
