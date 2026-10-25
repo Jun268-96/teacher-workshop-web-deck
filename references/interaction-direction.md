@@ -65,3 +65,5 @@
 편집기의 `수정 예시`는 위 가능성을 발견하고 구체적인 요청으로 연결하는 입구다. 로컬 추천은 GPT의 자료 분석과 다르며, 동봉 체험을 실제 서버/AI 결과로 표시하지 않는다. [체험 계약](editor-examples.md)을 따른다.
 
 공식 비교 근거(2026-10-25 확인): [Canva Code](https://www.canva.com/ai-code-generator/), [Canva Code 2.0](https://www.canva.com/newsroom/news/canva-code/), [Mentimeter AI Assistant](https://help.mentimeter.com/en/articles/16730234-create-and-edit-mentis-with-the-ai-assistant).
+
+구체적인 제작·검증 기준은 [가계·기업 서버 예시](economy-lab.md)를 참고한다. 자료 → 역할/행동/상태 계약 → 독립 화면 구현 → 공유 상태·복구 검증으로 이어가는 별도 참조 프로젝트이며, 원래 연수자료와 운영 계정은 건드리지 않는다.

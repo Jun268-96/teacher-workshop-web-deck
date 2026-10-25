@@ -14,6 +14,14 @@ node scripts/preview-scenes.mjs --dest ./scene-preview --serve --recommend revea
 
 설치·계정 없이 출력된 URL에서 체험합니다(Node 필요). 설문·단어는 한 브라우저 예시이며 여러 기기의 실제 집계에는 서버 연결이 필요합니다. 선택은 복사/JSON으로 전달할 수 있고, 전체 구성안 승인을 대신하지 않습니다. [자료 기반 추천·선택 흐름](references/scene-discovery.md) · [CSS 효과 조사와 공식 출처](references/scene-effects-research.md)
 
+**서버가 연결된 가계·기업 예시**도 포함합니다. 가계의 노동·소비와 기업의 임금·재고·판매가 교사 화면에 함께 반영됩니다. 독립 브라우저로 체험하고, 실제 서버 계산·중복 요청·끊김·권한·저장 실패까지 검사합니다. 공개 배포와 학교 기기 접속을 완료한 예시는 아닙니다.
+
+```sh
+node scripts/preview-economy.mjs --dest ../economy-example --serve --port 8798
+```
+
+[자료 근거·작동 규칙·검증 기준](references/economy-lab.md)
+
 [이전 정적 템플릿 체험](https://vanollim-deck-harness-20261023.hhj96916.workers.dev/) · [스킬 지침](SKILL.md) · [ZIP 다운로드](https://github.com/Jun268-96/teacher-workshop-web-deck/archive/refs/heads/main.zip)
 
 ## 사용하기
