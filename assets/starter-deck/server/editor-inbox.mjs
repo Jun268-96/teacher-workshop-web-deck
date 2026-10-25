@@ -23,7 +23,7 @@ async function atomicJSON(file,data){
 export async function openInbox(project){
   const root=await fs.realpath(project),privateDir=path.join(root,'.workshop-editor'),inbox=path.join(privateDir,'inbox');
   // Reuse the browser's trusted model and scene validators; submitted JSON is never evaluated.
-  const sandbox=vm.createContext({URL,window:{},document:{readyState:'loading',addEventListener(){}}});
+  const sandbox=vm.createContext({URL,atob,window:{},document:{readyState:'loading',addEventListener(){}}});
   for(const file of ['config.js','scene-runtime.js','deck-model.js'])vm.runInContext(await fs.readFile(path.join(root,'public',file),'utf8'),sandbox,{timeout:1000});
   const deckId=sandbox.window.WORKSHOP_CONFIG.deckId,html=await fs.readFile(path.join(root,'public/index.html'),'utf8');
   sandbox.templates=[...html.matchAll(/<section\b[^>]*>/gi)].map(m=>m[0]).filter(s=>/\bclass=["'][^"']*\bslide\b/.test(s)).map(s=>s.match(/\bid=["']([^"']+)/)?.[1]).filter(Boolean);
@@ -76,7 +76,7 @@ export async function openInbox(project){
 export async function inboxHandler(project){
   const store=await openInbox(project),token=crypto.randomBytes(32).toString('hex');let serial=Promise.resolve();
   const send=(res,status,data)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(data));};
-  async function body(req){if(!String(req.headers['content-type']||'').startsWith('application/json'))fail(415,'JSON 요청만 가능합니다.');const chunks=[];let length=0;for await(const chunk of req){length+=chunk.length;if(length>16000000)fail(413,'요청함은 묶음당 16MB 이하입니다. 이미지를 줄여 주세요.');chunks.push(chunk);}try{return JSON.parse(Buffer.concat(chunks).toString());}catch{fail(400,'JSON 요청이 필요합니다.');}}
+  async function body(req){if(!String(req.headers['content-type']||'').startsWith('application/json'))fail(415,'JSON 요청만 가능합니다.');const chunks=[];let length=0;for await(const chunk of req){length+=chunk.length;if(length>96*1024*1024)fail(413,'요청함은 묶음당 96MB 이하입니다. 영상이나 이미지를 줄여 주세요.');chunks.push(chunk);}try{return JSON.parse(Buffer.concat(chunks).toString());}catch{fail(400,'JSON 요청이 필요합니다.');}}
   return (req,res,url)=>{
     if(!url.pathname.startsWith('/api/editor-inbox'))return false;
     const job=async()=>{try{
