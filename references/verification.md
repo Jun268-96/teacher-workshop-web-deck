@@ -122,3 +122,7 @@ node --test <skill-dir>/scripts/*.test.mjs
 `node --test --test-concurrency=1 scripts/video.test.mjs`는 동봉된 합성 H.264 MP4로 파일 선택·드롭·클립보드 파일 삽입, 메타데이터·재생·크기 조절·교체·삭제·실행 취소를 검사한다. 로컬 저장 한도를 넘는 6MB MP4를 사용해 IndexedDB 저장→새로고침→다른 브라우저 컨텍스트의 편집 파일 가져오기→실제 요청함 저장→네트워크 오프라인의 단일 HTML 재생까지 확인한다. 파일의 큰 free 박스는 크기만 늘린 격리 테스트 데이터다. Finder의 OS 드롭·물리 기기·모든 MP4 코덱을 검증한 것은 아니다.
 
 잘못된/20MB 초과 MP4, 저장소 쓰기 실패·기존 저장본 보존·복원 실패 시 덮어쓰기 방지·순서 보장·이력 한도, 영상 숨김/페이지 이동 일시정지와 반응형 입력창도 검사한다. `WORKSHOP_VIDEO_OUTPUT=<private-directory>`로 캡처를 남긴다. 장면 추천 지침은 원본 연수의 실제 장면과 자료→조작→변화 계약을 대조하며, 코드 검사 통과를 GPT의 추천 품질 보증으로 소개하지 않는다.
+
+## 로고 없는 발표 설정 E2E
+
+`node --test --test-concurrency=1 scripts/presentation-settings.test.mjs`는 로고 없는 설정·Q&A 표시 저장·편집기 진입·오프라인 HTML의 공개 설정 유지, 전체화면/키보드/5종 뷰포트를 확인한다. 실제 Node 서버+격리 브라우저로 Q&A on/off·다른 활동 중 제출·기존 질문/초안 보존·처리 상태, 화면 집중/강의→활동·늦은 입장/재접속·종료 해제, 권한/형식 거절·서버 재시작·오프라인 롤백을 검사한다. 내장 회차 생성 후 키 복사 없는 연결과 위조 window 메시지 무시, 연결된 발표 HTML에 코드/키/질문이 들어가지 않는지도 확인한다. `WORKSHOP_SETTINGS_OUTPUT=<private-directory>`로 캡처를 남긴다. 물리 태블릿 통제·Cloudflare 등 공개 서버·전체 슬라이드 미러링 검증은 포함하지 않는다.

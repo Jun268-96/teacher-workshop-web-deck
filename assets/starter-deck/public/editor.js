@@ -256,7 +256,7 @@
     for(const video of output.querySelectorAll('video[src]')){if(video.dataset.editType==='video')video.controls=true;if(!video.src.startsWith('data:'))video.src=await dataURL(video.src);}
     for(const img of output.querySelectorAll('img[src]'))if(!img.src.startsWith('data:'))img.src=await dataURL(img.src);
     for(const link of output.querySelectorAll('link[rel=icon]'))link.href=await dataURL(link.href);
-    for(const script of output.querySelectorAll('script[src]')){const response=await fetch(script.src);if(!response.ok)throw Error('발표 스크립트를 읽을 수 없습니다.');script.textContent=(await response.text()).replace(/<\/script/gi,'<\\/script');script.removeAttribute('src');script.removeAttribute('defer');}
+    for(const script of output.querySelectorAll('script[src]')){const response=await fetch(script.src);if(!response.ok)throw Error('발표 스크립트를 읽을 수 없습니다.');let source=await response.text();if(script.getAttribute('src')==='config.js'&&window.WorkshopPresentationSettings)source+='\nwindow.WORKSHOP_CONFIG.presentationSettings='+JSON.stringify(window.WorkshopPresentationSettings.preferences)+';';script.textContent=source.replace(/<\/script/gi,'<\\/script');script.removeAttribute('src');script.removeAttribute('defer');}
     // Runtime initialises after markup even when saved HTML uses inline scripts.
     const scripts=[...output.querySelectorAll('script')];scripts.forEach(s=>output.querySelector('body').append(s));
     download(`${doc.deckId}-presentation.html`,'<!doctype html>\n'+output.outerHTML,'text/html');status('발표용 HTML 저장됨 · YouTube/참여 서버는 온라인 필요');
