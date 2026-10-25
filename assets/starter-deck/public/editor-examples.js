@@ -1,0 +1,57 @@
+/* Editor-only, isolated examples. Trying a demo never changes the user's deck. */
+(() => {
+ 'use strict';
+ const catalog=[
+  {id:'reveal',title:'한 번에 하나씩',description:'한꺼번에 읽는 설명을 발표 속도에 맞춥니다.',before:'관찰하기 → 질문하기 → 연결하기',prompt:'처음에는 핵심 문장만 보이고, 클릭할 때마다 설명이 한 단계씩 나타나게 해줘. 처음부터 다시 볼 수도 있게 해줘.',intent:'발표자 클릭으로 단계 진행. 바깥 페이지 이동과 분리. 키보드·터치·초기화 지원.'},
+  {id:'motion',title:'숫자를 실감나게',description:'결과 숫자가 막대와 함께 차오릅니다.',before:'참여율 80%',prompt:'이 페이지의 근거 있는 숫자 하나를 골라, 클릭하면 숫자와 막대가 함께 차오르게 해줘. 최종값과 단위는 그대로 유지하고, 다시 재생할 수 있게 해줘.',intent:'예시의 80%를 복사하지 말고 자료의 확정값만 사용. 시간 미정 유지. 동작 줄이기 지원.'},
+  {id:'compare',title:'차이가 보이는 비교',description:'같은 화면의 같은 영역을 겹쳐 비교합니다.',before:'수정 전 / 수정 후를 작은 사진 두 장으로 보기',prompt:'비교할 두 화면에서 달라진 부분을 같은 배율로 크게 잘라 보여줘. 경계선을 움직여 수정 전후를 비교하게 해줘.',intent:'동봉 그림은 배치 예시. 실제 전후 자료 확인 후 같은 영역·배율·라벨을 맞춤. 서로 다른 증거를 전후로 꾸미지 않음.'},
+  {id:'carousel',title:'사진 한 장을 크게',description:'여러 사진을 한 영역에서 넘겨 봅니다.',before:'작은 사진을 나란히 모두 배치',prompt:'사진은 핵심 영역 한 장만 크게 보여주고, 내부 이전·다음 버튼으로 넘기게 해줘. 짧은 설명과 현재 순서도 보여줘.',intent:'바깥 푸터는 페이지 이동, 내부 버튼은 사진 이동. 첫 사진·끝 사진·재입장 규칙을 명확히 함.'},
+  {id:'tool',title:'설명 대신 직접 실행',description:'추첨 방법 설명을 실제 추첨 도구로 바꿉니다.',before:'인원수를 정하고 무작위로 발표자를 뽑습니다.',prompt:'설명을 읽는 대신 바로 실행할 수 있는 작은 도구로 바꿔줘. 예를 들어 발표 추첨이라면 인원수를 입력하고 버튼을 누르면 번호가 나오게 해줘. 이 자료에 맞는 기능을 골라줘.',intent:'로컬 도구. 입력 범위·잘못된 입력·중복 허용 여부·다시 실행 결과 검증. 실제 명단 자동 반입 금지.'},
+  {id:'participation',title:'두 화면이 함께 변하기',description:'참가자의 제출이 진행자 화면에 모입니다.',before:'진행자 화면의 고정된 결과표',prompt:'진행자는 결과를 보고, 참가자는 자기 기기에서 제출하는 화면으로 만들어줘. 제출하면 진행자 화면에 바로 반영되게 해줘. 실제 서버 연결과 두 기기 검증까지 필요한 범위를 먼저 알려줘.',intent:'체험은 한 브라우저의 모형. 실제 여러 기기는 서버 상태·진행자 권한·중복 제출·늦은 입장·재접속·초기화 검증 필요. 외부 설치·과금·운영 배포는 기존 승인 범위 확인.'},
+  {id:'scenario',title:'선택하면 상황이 변하기',description:'설명을 학생이 선택하는 상황으로 바꿉니다.',before:'소비자는 예산 안에서 필요한 물건을 선택합니다.',prompt:'이 내용을 학생이 선택하고 결과를 확인하는 상황으로 바꿔줘. 선택에 따라 예산이나 상태가 변하고, 결과를 비교한 뒤 다시 시도하게 해줘. 자료에서 확인되는 규칙을 쓰고 가정은 구분해줘.',intent:'체험용 예산 100·공책 30·간식 20은 예시 수치. 실제 교과 내용·학습 목표에 맞는 규칙을 설계하고 교사가 확인. 클라이언트만의 결과와 공유 결과 구분.'},
+  {id:'workflow',title:'작업 순서를 직접 시연',description:'파일 첨부와 질문 입력 과정을 눌러 봅니다.',before:'① 파일을 첨부합니다. ② 수업 맥락을 설명합니다.',prompt:'설명 문장을 나열하는 대신, 파일을 끌어 첨부하고 질문을 입력하는 작업 흐름을 직접 시연하게 해줘. 단계는 내가 조작할 때만 진행되게 해줘. 실제 AI 응답이 필요한지 대본 시연이면 되는지 구분해줘.',intent:'체험은 파일·대화의 대본 시연. 실제 파일을 읽거나 AI를 호출하지 않음. 실제 연동 시 첨부 이후에만 내용 반영, 대화 맥락·오류·재시도 검증. API 결제 자동 추가 금지.'}
+ ];
+ const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+ function setup(bridge){
+  const dialog=el('dialog',undefined,'editor-examples');dialog.id='editor-examples';dialog.dataset.editorUi='';dialog.setAttribute('aria-labelledby','examples-title');
+  dialog.innerHTML='<header><div><small>누르고, 비교하고, 내 페이지에 요청하기</small><h2 id="examples-title">수정 예시</h2></div><button type="button" data-example-close aria-label="수정 예시 닫기">×</button></header><div class="examples-body"><nav aria-label="수정 예시 목록"></nav><div class="examples-content"><div class="examples-intro"><h3></h3><p></p></div><div class="examples-comparison"><section><h4>수정 전</h4><div class="examples-before"></div></section><section><h4>수정 후 <small>직접 눌러보세요</small></h4><div class="examples-after" data-scene-preview></div></section></div><p class="examples-boundary"></p><form><div class="examples-target"><strong></strong><label><input type="checkbox" id="examples-object"> 선택한 요소에만 요청</label></div><label for="examples-prompt">이렇게 요청해 보세요</label><textarea id="examples-prompt" rows="3" maxlength="6000"></textarea><div class="examples-submit"><span>요청을 모은 뒤 요청함이나 ChatGPT 주석으로 전달합니다.</span><button type="submit" class="editor-primary">내 페이지에 수정 요청</button></div><p class="examples-error" role="alert" hidden></p></form></div></div>';
+  document.getElementById('edit-tools').append(dialog);
+  const $=s=>dialog.querySelector(s);let snapshot=null,active=null,recommended=[],drafts=new Map();
+  function recommend(p){const text=p.objects.filter(o=>!o.deleted&&o.type==='text').map(o=>o.content).join(' '),images=p.objects.filter(o=>!o.deleted&&o.type==='image').length,ids=[];if(images>=2)ids.push('compare','carousel');if(/\d/.test(text))ids.push('motion');if(/참여|실시간|설문|제출/.test(text))ids.push('participation');if(/선택|예산|소비|결과/.test(text))ids.push('scenario');if(/첨부|파일|순서|단계/.test(text))ids.push('workflow');return [...new Set([...ids,'reveal','tool','compare'])].slice(0,3);}
+  function targetLabel(){const object=$('#examples-object').checked;$('.examples-target strong').textContent=object?`선택한 요소 · ${snapshot.objectLabel}`:`현재 페이지 · ${snapshot.pageTitle}`;}
+  function render(id){if(active)drafts.set(active.id,$('#examples-prompt').value);active=catalog.find(c=>c.id===id);$('.examples-intro h3').textContent=active.title;$('.examples-intro p').textContent=active.description;$('#examples-prompt').value=drafts.get(id)??active.prompt;$('.examples-error').hidden=true;
+   const nav=$('nav');nav.replaceChildren();for(const c of [...catalog].sort((a,b)=>Number(recommended.includes(b.id))-Number(recommended.includes(a.id)))){const b=el('button',c.title);b.type='button';b.dataset.example=c.id;b.setAttribute('aria-pressed',String(c.id===id));if(recommended.includes(c.id))b.append(el('small','이 페이지에 추천'));nav.append(b);}
+   const before=$('.examples-before'),after=$('.examples-after');before.replaceChildren();after.replaceChildren();after.className='examples-after';after.removeAttribute('data-scene-config');after.removeAttribute('data-motion-token');before.append(el('p',active.before));
+   $('.examples-boundary').textContent=['participation','workflow'].includes(id)?(id==='participation'?'체험용 모형 · 실제 기기 연결에는 서버가 필요합니다.':'대본 시연 · 파일 분석이나 AI 호출은 하지 않습니다.'):'동봉된 체험용 자료입니다. 내 페이지는 요청을 확인한 뒤 수정합니다.';
+   if(['reveal','motion','compare','carousel'].includes(id)){
+    const cfg=window.WorkshopScenes.defaults(id);window.WorkshopScenes.mount(after,cfg);
+    if(['compare','carousel'].includes(id)){before.replaceChildren();const row=el('div',undefined,'examples-tiny-images');cfg.images.forEach((src,i)=>{const img=el('img');img.src=src;img.alt=cfg.captions[i];row.append(img);});before.append(row);}
+   }else mountCustom(after,id);
+  }
+  function btn(parent,label,fn){const b=el('button',label);b.type='button';b.addEventListener('click',fn);parent.append(b);return b;}
+  function mountCustom(host,id){
+   if(id==='tool'){
+    const label=el('label','참여 인원 '),input=el('input');input.type='number';input.min='1';input.max='100';input.value='24';input.setAttribute('aria-label','체험 참여 인원');label.append(input);const output=el('output','누가 발표할까요?');host.append(label,output);btn(host,'발표자 뽑기',()=>{const count=Number(input.value);if(!Number.isInteger(count)||count<1||count>100){output.textContent='1~100명으로 입력해 주세요.';return;}output.textContent=`${1+Math.floor(Math.random()*count)}번`;});
+   }
+   if(id==='participation'){
+    let count=0;const pair=el('div',undefined,'examples-two-screens'),teacher=el('section'),student=el('section'),result=el('output','0명 제출');teacher.append(el('strong','진행자 화면'),result);student.append(el('strong','참가자 화면'));const submit=btn(student,'제출하기',()=>{count++;result.textContent=`${count}명 제출`;submit.disabled=true;submit.textContent='제출 완료';});pair.append(teacher,student);host.append(pair);btn(host,'다음 참가자 체험',()=>{submit.disabled=false;submit.textContent='제출하기';});btn(host,'처음부터',()=>{count=0;result.textContent='0명 제출';submit.disabled=false;submit.textContent='제출하기';});
+   }
+   if(id==='scenario'){
+    let budget=100,items=0;const result=el('output');const update=()=>{result.textContent=`남은 예산 ${budget} · 고른 물건 ${items}개`;};host.append(el('p','예산 안에서 필요한 것을 골라보세요.'),result);const buttons=[];for(const [name,price]of [['공책',30],['간식',20]])buttons.push(btn(host,`${name} ${price}`,()=>{budget-=price;items++;update();buttons.forEach((b,i)=>b.disabled=budget<[30,20][i]);}));btn(host,'다시 선택',()=>{budget=100;items=0;buttons.forEach(b=>b.disabled=false);update();});update();
+   }
+   if(id==='workflow'){
+    let attached=false,step=0;const file=el('button','수업 자료.pptx', 'examples-file');file.type='button';file.draggable=true;file.setAttribute('aria-label','수업 자료 첨부하기');const drop=el('div','이곳에 파일을 놓으세요', 'examples-drop'),chat=el('output','파일을 첨부해 주세요.'),next=btn(host,'다음 질문 입력',()=>{chat.textContent=['이 자료로 수업할 건데, 어떻게 진행하면 좋을지 얘기하자.','학생들이 직접 선택하는 상황으로 보여주자.','교사가 진행을 조절하고 현황을 볼 수 있어야 해.'][step++%3];});next.disabled=true;
+    const attach=()=>{if(attached)return;attached=true;drop.textContent='▣ 수업 자료.pptx · 첨부됨';drop.classList.add('attached');chat.textContent='첨부 완료. 다음 질문을 입력해 보세요.';next.disabled=false;};file.addEventListener('click',attach);file.addEventListener('dragstart',e=>e.dataTransfer.setData('text/x-workshop-example','lesson'));drop.addEventListener('dragover',e=>e.preventDefault());drop.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();if(e.dataTransfer.getData('text/x-workshop-example')==='lesson')attach();});host.prepend(file,drop,chat);btn(host,'처음부터',()=>{attached=false;step=0;drop.textContent='이곳에 파일을 놓으세요';drop.classList.remove('attached');chat.textContent='파일을 첨부해 주세요.';next.disabled=true;});
+   }
+  }
+  function open(){const s=bridge.state();if(!s.editing)return;const anchor=s.object||s.current.objects.find(o=>!o.deleted&&o.type==='text')||s.current.objects.find(o=>!o.deleted);if(!anchor){bridge.status('요소를 하나 추가한 뒤 수정 예시를 요청해 주세요.');return;}
+   snapshot={revision:s.document.revision,pageId:s.current.id,pageTitle:s.current.title,objectId:anchor.id,objectLabel:anchor.type==='text'?anchor.content.slice(0,40):({image:'사진',video:'동영상',scene:'장면'})[anchor.type]||'선택 요소',hasSelection:Boolean(s.object)};
+   recommended=recommend(s.current);drafts=new Map();active=null;$('#examples-object').disabled=!snapshot.hasSelection;$('#examples-object').checked=false;targetLabel();render(recommended[0]);dialog.showModal();
+  }
+  function close(){$('.examples-after').removeAttribute('data-motion-token');if(dialog.open)dialog.close();$('.examples-after').replaceChildren();snapshot=null;active=null;}
+  dialog.addEventListener('cancel',e=>{e.preventDefault();close();});$('[data-example-close]').addEventListener('click',close);$('nav').addEventListener('click',e=>{const id=e.target.closest('[data-example]')?.dataset.example;if(id)render(id);});$('#examples-object').addEventListener('change',targetLabel);
+  $('form').addEventListener('submit',e=>{e.preventDefault();try{const prompt=$('#examples-prompt').value.trim();bridge.requestExample({...snapshot,scope:$('#examples-object').checked?'object':'page',prompt,example:{id:active.id,title:active.title,intent:active.intent}});close();bridge.onQueued();}catch(error){$('.examples-error').textContent=error.message;$('.examples-error').hidden=false;}});
+  return {open,close,refresh(){if(dialog.open&&(!bridge.state().editing||bridge.state().current.id!==snapshot?.pageId))close();}};
+ }
+ window.WorkshopEditorExamples={setup};
+})();

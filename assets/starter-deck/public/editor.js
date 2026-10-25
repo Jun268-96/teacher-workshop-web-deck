@@ -129,6 +129,21 @@
     if(behavior.click?.kind==='swap-image'){if(behavior.click.src.startsWith('data:'))behavior.click.src=`embedded-action:${o.id}`;assets.push(behavior.click.src);}
     return {deckId:doc.deckId,templateVersion:doc.templateVersion,revision:doc.revision,page:{id:p.id,title:p.title,notes:p.notes,seconds:p.seconds},object:{...clone(o),behavior,content:['image','video'].includes(o.type)&&o.content.startsWith('data:')?`embedded:${o.id}`:o.content},internalState:{tabs:[...page.querySelectorAll('[role=tab][aria-selected=true]')].map(t=>t.textContent),inputs:[...page.querySelectorAll('input,select,textarea')].map(n=>({id:n.dataset.editKey||n.id,value:n.value}))},preserve:{attributes:node?[...node.attributes].filter(a=>/^data-|^aria-/.test(a.name)).map(a=>[a.name,a.name==='data-click-action'?JSON.stringify(behavior.click):a.value]):[],behavior},assets,impactReview:['화면과 사례의 의미','발표 노트','시간 배분','관련 페이지와 참여 활동']};
   }
+  function requestExample(input) {
+    if(!editing||behaviorPreview||pending)throw Error('편집 화면에서 변경안 확인을 마친 뒤 요청해 주세요.');
+    const allowed=['reveal','motion','compare','carousel','tool','participation','scenario','workflow'];
+    if(!input||!allowed.includes(input.example?.id)||!['page','object'].includes(input.scope)||typeof input.prompt!=='string'||!input.prompt.trim()||input.prompt.length>6000)throw Error('수정 요청과 대상을 확인해 주세요.');
+    if(input.revision!==doc.revision||input.pageId!==current().id)throw Error('페이지가 바뀌었습니다. 예시 창을 다시 열어 대상을 확인해 주세요.');
+    if(queue.length>=100)throw Error('요청은 100개까지 모을 수 있습니다. 기존 요청을 먼저 처리해 주세요.');
+    const p=current(),o=p.objects.find(o=>o.id===input.objectId&&!o.deleted);
+    if(!o)throw Error('선택한 대상이 없어졌습니다. 예시 창을 다시 열어 주세요.');
+    const ctx=JSON.parse(JSON.stringify(context(p,o),(key,value)=>typeof value==='string'?value.replace(/data:(?:image|video)\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+/gi,'embedded-media: 원본 편집본 참조'):value));ctx.scope=input.scope;
+    ctx.example={id:input.example.id,title:String(input.example.title).slice(0,100),demo:'local-example',intent:String(input.example.intent).slice(0,1000)};
+    ctx.page.objects=p.objects.filter(o=>!o.deleted).map(o=>({id:o.id,type:o.type,label:o.type==='text'?o.content.slice(0,240):objectLabel(o,p)}));
+    const request={id:M.uid('request'),request:input.prompt.trim(),trigger:'',context:ctx};
+    queue.push(request);persist();renderQueue();status('수정 요청을 목록에 담았습니다. 요청함에 저장하거나 ChatGPT 주석으로 보내세요.');
+    return request.id;
+  }
   function highlight() {document.querySelectorAll('.edit-selected,.edit-resizable').forEach(n=>n.classList.remove('edit-selected','edit-resizable')); if(editing&&selected){const node=document.querySelector(`[data-object-id="${selected}"]`);node?.classList.add('edit-selected');if(['text','image','video'].includes(target()?.type))node?.classList.add('edit-resizable');}syncResizeFrame();ui?.refresh();}
   function renderPanel() {
     const p=current(), o=target();$('#page-select').replaceChildren(...doc.pages.map((x,i)=>new Option(`${i+1}. ${x.title}`,x.id)));$('#page-select').value=p.id;$('#page-title').value=p.title;$('#page-notes').value=p.notes;$('#page-seconds').value=p.seconds;
@@ -212,7 +227,7 @@
     for(let start=0;start<text.length;){let end=Math.min(start+18000,text.length);if(end<text.length&&/[\uD800-\uDBFF]/.test(text[end-1]))end--;shareParts.push(text.slice(start,end));start=end;}
     ui?.close();renderShare();if(!shareDialog.open)shareDialog.show();requestShareAnnotation();
   }
-  function renderQueue() {$('#queue-count').textContent=queue.length;$('#queue-annotation-button').disabled=!queue.length;inboxControls();$('#request-list').replaceChildren();for(const r of queue){const li=document.createElement('li'),label=document.createElement('p'),input=document.createElement('textarea'),remove=document.createElement('button');label.textContent=`${r.context.page.title} · ${{text:'글자',image:'사진',youtube:'영상',video:'동영상',block:'화면 블록',scene:'장면'}[r.context.object.type]||'선택 요소'}`;input.value=r.request;input.setAttribute('aria-label','저장된 수정 요청');input.addEventListener('change',()=>{r.request=input.value;persist();$('#batch-copy').value=batch();});remove.textContent='이 요청 삭제';remove.type='button';remove.addEventListener('click',()=>{queue=queue.filter(x=>x.id!==r.id);persist();renderQueue();});li.append(label,input,remove);$('#request-list').append(li);}$('#batch-copy').value=batch();ui?.refresh();}
+  function renderQueue() {$('#queue-count').textContent=queue.length;$('#queue-annotation-button').disabled=!queue.length;inboxControls();$('#request-list').replaceChildren();for(const r of queue){const li=document.createElement('li'),label=document.createElement('p'),input=document.createElement('textarea'),remove=document.createElement('button');label.textContent=`${r.context.page.title} · ${r.context.scope==='page'?'페이지 전체':{text:'글자',image:'사진',youtube:'영상',video:'동영상',block:'화면 블록',scene:'장면'}[r.context.object.type]||'선택 요소'}${r.context.example?' · '+r.context.example.title:''}`;input.value=r.request;input.setAttribute('aria-label','저장된 수정 요청');input.addEventListener('change',()=>{r.request=input.value;persist();$('#batch-copy').value=batch();});remove.textContent='이 요청 삭제';remove.type='button';remove.addEventListener('click',()=>{queue=queue.filter(x=>x.id!==r.id);persist();renderQueue();});li.append(label,input,remove);$('#request-list').append(li);}$('#batch-copy').value=batch();ui?.refresh();}
   function file(accept,fn,max=16000000) {const input=$('#edit-file');input.accept=accept;input.value='';input.onchange=()=>{if(input.files[0]?.size>max){status(`파일은 ${Math.floor(max/1024/1024)}MB 이하로 줄여 주세요.`);return;}if(input.files[0])Promise.resolve(fn(input.files[0])).catch(e=>status(e.message));};input.click();}
   let lastCanvasPoint=null;
   const inputTarget=n=>n?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable=false]),[role=textbox]');
@@ -368,7 +383,7 @@
   // Private UI bridge: all writes still pass model validation, history and revision checks.
   ui=window.WorkshopEditorUI?.setup({
     state:()=>({document:doc,requests:queue,current:current(),object:target(),node:selected?document.querySelector(`[data-object-id="${selected}"]`):null,editing,preview:behaviorPreview,picking:targetPicking,inserting,canUndo:undo.length>0,canRedo:redo.length>0}),
-    beginInsert,insertAt,videoDraft,pickMP4,insertionRect,visibleCanvas,
+    beginInsert,insertAt,videoDraft,pickMP4,insertionRect,visibleCanvas,requestExample,
     setInserting:on=>{inserting=on;hideGuides();syncResizeFrame();ui?.refresh();},
     refreshBehavior:renderPanel,
     setPicking:on=>{targetPicking=on;hideGuides();syncResizeFrame();ui?.refresh();},
