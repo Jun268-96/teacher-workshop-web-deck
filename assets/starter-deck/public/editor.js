@@ -12,7 +12,7 @@
     seed.push({id:page.id,template:page.id,title:page.dataset.title,notes:'',seconds:0,objects:[...page.querySelectorAll('[data-edit-key]')].filter(el=>!el.matches('[data-brand-slot][hidden]')).map(el=>({id:`${page.id}-${el.dataset.editKey}`,key:el.dataset.editKey,type:el.dataset.editType || (el.tagName === 'IMG' ? 'image' : 'text'),content:el.tagName === 'IMG' ? el.getAttribute('src') : readText(el),deleted:false,style:{},behavior:{}}))});
   });
   const initial = {schema:1,templateVersion:1,deckId:window.WORKSHOP_CONFIG.deckId,revision:0,pages:seed};
-  let panelPage = '', doc = clone(initial), undo = [], redo = [], queue = [], selected = null, editing = false, behaviorPreview = false, pending = null, storageOK = true;
+  let panelPage = '', doc = clone(initial), undo = [], redo = [], queue = [], selected = null, editing = false, behaviorPreview = false, targetPicking = false, pending = null, storageOK = true;
   function validRequests(value) { if(!Array.isArray(value))throw Error('요청 목록이 올바르지 않습니다.'); return value.slice(0,100).map(r=>{if(typeof r.id!=='string'||typeof r.request!=='string'||r.request.length>10000||!r.context?.page?.id||!r.context?.object?.id||typeof r.context.page.title!=='string')throw Error('요청 항목이 올바르지 않습니다.');return clone(r);}); }
   const key = `workshop-editor:v1:${doc.deckId}`;
   let inboxConnection=null,inboxSaved=null,inboxBusy=false;
@@ -35,7 +35,7 @@
       <button data-action="object-save">배치 적용</button>
       </details><details><summary>동작 추가·변경</summary><label>마우스를 올려놓았을 때 보여줄 설명<input id="object-tooltip" maxlength="2000" placeholder="예: 모둠별로 함께 해결할 상황입니다." aria-describedby="behavior-hover-help"></label><p id="behavior-hover-help">선택한 글자나 사진 옆에 작은 말풍선으로 나타납니다.</p><label>클릭하거나 터치했을 때<select id="behavior-kind"><option value="explain">설명 창 열기</option><option value="swap-image">사진 바꾸기</option><option value="toggle">다른 요소 보이기·숨기기</option><option value="none">아무 일도 하지 않기</option></select></label>
       <div id="behavior-explain-fields"><label>보여줄 설명<textarea id="object-explain" rows="2" placeholder="예: 그림을 보고 해결 방법을 한 가지씩 이야기해 보세요." aria-describedby="behavior-click-help"></textarea></label><p id="behavior-click-help">설명이 별도의 창으로 열립니다.</p></div>
-      <div id="behavior-target-fields" hidden><label><span id="behavior-target-label">어떤 요소를 바꿀까요?</span><select id="behavior-target"></select></label><div id="behavior-target-preview" class="behavior-target-preview"></div><p id="behavior-target-help"></p></div>
+      <div id="behavior-target-fields" hidden><p id="behavior-target-label">어떤 요소를 바꿀까요?</p><button type="button" data-ui-action="target-pick" class="editor-soft" id="behavior-pick-target">화면에서 대상 고르기</button><select id="behavior-target" hidden aria-label="연결 대상"></select><div id="behavior-target-preview" class="behavior-target-preview"></div><p id="behavior-target-help"></p></div>
       <div id="behavior-image-fields" hidden><button type="button" data-action="behavior-image" class="editor-soft">바뀔 사진 선택</button><img id="behavior-image-preview" alt="클릭한 뒤 나타날 사진" hidden><p>다시 클릭하면 원래 사진으로 돌아옵니다.</p></div>
       <p id="behavior-error" role="alert" hidden></p><button data-action="behavior-save">적용하고 미리보기</button></details>
       </section>
@@ -64,8 +64,8 @@
   const resizeObserver=new ResizeObserver(()=>syncResizeFrame());
   function syncResizeFrame(){
     const o=target(),node=o&&document.querySelector(`[data-object-id="${o.id}"]`);
-    const visible=editing&&!behaviorPreview&&['text','image'].includes(o?.type)&&node&&!node.isContentEditable&&node.getClientRects().length;
-    resizeFrame.hidden=!visible;if(!visible)return;
+    const visible=editing&&!behaviorPreview&&!targetPicking&&['text','image'].includes(o?.type)&&node&&!node.isContentEditable&&node.getClientRects().length;
+    resizeFrame.hidden=!visible;ui?.syncLinks?.();if(!visible)return;
     if(resizeObserved!==node){resizeObserver.disconnect();resizeObserver.observe(node);resizeObserved=node;}
     const r=node.getBoundingClientRect();Object.assign(resizeFrame.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
   }
@@ -81,6 +81,7 @@
   }
   function mutate(fn) { const next=clone(doc);fn(next);publish(next); }
   function render() {
+    ui?.cancelPick?.(false);
     const old = doc.pages.some(p=>p.id===initialPage)?initialPage:api.currentId(), tabs=[...$('#deck').querySelectorAll('[role=tab][aria-selected=true]')].map(n=>[n.closest('.slide').id,n.dataset.tab]), inputs=[...$('#deck').querySelectorAll('input,textarea,select')].filter(n=>n.id||n.dataset.runtimeId).map(n=>[n.closest('.slide').id,n.dataset.runtimeId||n.id,n.value]); $('#deck').replaceChildren();initialPage=null;
     for (const p of doc.pages) {
       const source=bases.get(p.template), el=source ? source.cloneNode(true) : document.createElement('section');
@@ -134,14 +135,14 @@
     $('#behavior-target').replaceChildren(new Option(candidates.length?'선택해 주세요':kind==='swap-image'?'먼저 이 페이지에 사진을 추가해 주세요':'먼저 이 페이지에 다른 요소를 추가해 주세요',''),...candidates.map(x=>new Option(objectLabel(x),x.id)));
     $('#behavior-target').value=candidates.some(x=>x.id===targetId)?targetId:kind==='swap-image'&&o?.type==='image'?o.id:'';
     $('#behavior-target-label').textContent=kind==='swap-image'?'어떤 사진을 바꿀까요?':'어떤 요소를 보여줄까요?';$('#behavior-target-help').textContent=kind==='toggle'?'발표 시작에는 숨겨져 있다가, 클릭할 때마다 나타났다 사라집니다. 편집 중에는 흐리게 보입니다.':'이 페이지에 있는 사진을 골라 주세요.';
-    behaviorTargetPreview();$('#behavior-image-preview').hidden=!behaviorImage;if(behaviorImage)$('#behavior-image-preview').src=behaviorImage;else $('#behavior-image-preview').removeAttribute('src');ui?.layout();
+    $('#behavior-pick-target').disabled=!candidates.length;behaviorTargetPreview();$('#behavior-image-preview').hidden=!behaviorImage;if(behaviorImage)$('#behavior-image-preview').src=behaviorImage;else $('#behavior-image-preview').removeAttribute('src');ui?.layout();
   }
-  function behaviorTargetPreview(){const box=$('#behavior-target-preview'),item=current().objects.find(x=>x.id===$('#behavior-target').value);box.replaceChildren();box.hidden=!item;if(!item)return;if(item.type==='image'){const img=document.createElement('img');img.src=item.content;img.alt='현재 사진';box.append(img);}const text=document.createElement('span');text.textContent=objectLabel(item);box.append(text);}
+  function behaviorTargetPreview(){const box=$('#behavior-target-preview'),item=current().objects.find(x=>x.id===$('#behavior-target').value);box.replaceChildren();box.hidden=!item;$('#behavior-pick-target').textContent=item?'연결 대상 다시 고르기':'화면에서 대상 고르기';if(item){if(item.type==='image'){const img=document.createElement('img');img.src=item.content;img.alt='연결된 사진';box.append(img);}const text=document.createElement('span');text.textContent='선택한 대상 · '+objectLabel(item);box.append(text);}ui?.syncLinks?.();}
   $('#behavior-kind').addEventListener('change',()=>{behaviorFields();$('#behavior-error').hidden=true;});$('#behavior-target').addEventListener('change',behaviorTargetPreview);
   function clearActionReferences(page,ids){for(const item of page.objects)if(ids.has(item.behavior.click?.targetId))delete item.behavior.click;}
   function heightMode(){const manual=$('#object-height-mode').value==='manual';$('#object-height-field').hidden=!manual;$('#object-height').disabled=!manual;$('#placement-height-help').textContent=manual?'입력한 값이 최종 박스 높이입니다. 글자 크기는 바뀌지 않습니다.':'높이는 내용에 맞춰 자동으로 정해집니다.';}
   $('#object-height-mode').addEventListener('change',()=>{heightMode();ui?.layout();});
-  function setBehaviorPreview(on){behaviorPreview=on&&editing;hideGuides();document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'미리보기 중 · 마우스를 올려놓거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 모서리로 크기를 조절하세요. 더블클릭하면 글자를 수정합니다.';api.hideTooltip?.();api.resetActions?.();syncResizeFrame();ui?.refresh();}
+  function setBehaviorPreview(on){ui?.cancelPick?.(false);behaviorPreview=on&&editing;hideGuides();document.body.classList.toggle('is-behavior-preview',behaviorPreview);$('#edit-mode-label').textContent=behaviorPreview?'동작 시험':'편집 모드';$('#behavior-test').textContent=behaviorPreview?'편집으로':'동작 시험';$('#behavior-test').setAttribute('aria-pressed',String(behaviorPreview));$('#edit-mode-hint').textContent=behaviorPreview?'미리보기 중 · 마우스를 올려놓거나 클릭해 보세요. 이동하려면 편집으로 돌아가세요.':'요소를 끌어 이동하고, 모서리로 크기를 조절하세요. 더블클릭하면 글자를 수정합니다.';api.hideTooltip?.();api.resetActions?.();syncResizeFrame();ui?.refresh();}
   function setEditing(on) { editing=on;if(!on)shareDialog.close();else if(!inboxConnection)connectInbox();setBehaviorPreview(false);panelPage=api.currentId();document.body.classList.toggle('is-editing',on);api.resetActions?.();$('#edit-tools').hidden=!on;$('#edit-toggle').setAttribute('aria-pressed',String(on));$('#edit-toggle').textContent=on?'편집 중':'편집';api.layoutMoved?.();renderPanel();highlight();ui?.layout(); }
   function choose(id) { selected=id;renderPanel();highlight(); }
   function download(name,content,type='application/json') {const a=document.createElement('a');const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -329,7 +330,8 @@
   window.WorkshopEditor={get document(){return clone(doc);},get requests(){return clone(queue);},previewPatch,exportRequests:batch};
   // Private UI bridge: all writes still pass model validation, history and revision checks.
   ui=window.WorkshopEditorUI?.setup({
-    state:()=>({document:doc,requests:queue,current:current(),object:target(),node:selected?document.querySelector(`[data-object-id="${selected}"]`):null,editing,preview:behaviorPreview,canUndo:undo.length>0,canRedo:redo.length>0}),
+    state:()=>({document:doc,requests:queue,current:current(),object:target(),node:selected?document.querySelector(`[data-object-id="${selected}"]`):null,editing,preview:behaviorPreview,picking:targetPicking,canUndo:undo.length>0,canRedo:redo.length>0}),
+    setPicking:on=>{targetPicking=on;hideGuides();syncResizeFrame();ui?.refresh();},
     go:id=>api.go(id),layout:()=>api.layoutMoved?.(),preview:setBehaviorPreview,status,
     action:name=>root.querySelector(`[data-action="${name}"]`)?.click(),
     update:set=>{const o=target();if(!o)return;mutate(d=>{const item=d.pages.find(p=>p.id===current().id).objects.find(x=>x.id===o.id);if(set.content!==undefined)item.content=set.content;if(set.style)item.style={...item.style,...set.style};});},

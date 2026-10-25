@@ -28,3 +28,5 @@ export async function action(p,name){
  else if(await p.locator('#editor-panel').isVisible())await p.locator('[data-ui-action=close]').click();
  const inside=p.locator(`#editor-panel [data-action="${name}"]`).filter({visible:true});const target=await inside.count()?inside.first():p.locator(`[data-action="${name}"]`).filter({visible:true}).first();await target.click();
 }
+
+export async function pickTarget(p,id){await p.locator('#behavior-pick-target').click();await p.locator(`#deck [data-object-id="${id}"]`).click();}
