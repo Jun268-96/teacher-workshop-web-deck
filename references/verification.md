@@ -104,3 +104,5 @@ node --test <skill-dir>/scripts/*.test.mjs
 ## 로컬 요청함 E2E
 
 `node --test scripts/editor-inbox.test.mjs`는 새 패키지/계정 없이 브라우저에서 요청/현재 편집본을 저장하고, 별도 에이전트 CLI 프로세스가 읽어 변경안을 등록한 뒤 파일 선택 없는 미리보기/취소/확정/실행 취소를 확인한다. 기존 편집과 업로드 이미지 보존, 원본 스냅샷 불변, 재시도 중복 제거/처리 상태 유지, 기준 버전 충돌 거절, 저장 실패 시 목록 유지, 로컬 Host/Origin/토큰·심볼릭 링크 경계와 비공개 파일 제외를 검사한다. `WORKSHOP_INBOX_OUTPUT=<private-directory>`로 캡처를 남긴다. 실제 Claude 모델을 호출하거나 자동 기동한 검사가 아니다.
+
+`node --test scripts/click-actions.test.mjs`는 설정 창의 사진 교체/요소 보이기, 누락 입력 안내와 적용 전 초안, 편집 중 흐린 대상 수정, 터치/키보드, 페이지/요소 복제와 삭제·실행 취소, JSON/AI 패치와 오프라인 HTML을 검사한다. 같은 페이지 참조와 순환·코드/위험 이미지 거절도 확인한다. `WORKSHOP_ACTION_OUTPUT=<private-directory>`로 화면 크기별 설정/실행 캡처를 남긴다.

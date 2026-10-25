@@ -28,7 +28,18 @@
           if (k === 'color' && !/^#[a-fA-F0-9]{6}$/.test(v) || k === 'textAlign' && !['left','center','right'].includes(v)) throw Error('지원하지 않는 글자 스타일입니다.');
         }
         const b = o.behavior;
-        if (!b || Object.keys(b).some(k=>!['tooltip','explain'].includes(k)) || Object.values(b).some(v=>typeof v !== 'string' || v.length > 2000)) throw Error('동작 데이터가 올바르지 않습니다.');
+        if (!b || Object.keys(b).some(k=>!['tooltip','explain','click'].includes(k)) || ['tooltip','explain'].some(k=>b[k]!==undefined&&(typeof b[k]!=='string'||b[k].length>2000))) throw Error('동작 데이터가 올바르지 않습니다.');
+        if (b.click != null) {
+          const a=b.click;
+          if (!a || typeof a!=='object' || Array.isArray(a) || !['swap-image','toggle'].includes(a.kind) || !idOK(a.targetId) || Object.keys(a).some(k=>!['kind','targetId',...(a.kind==='swap-image'?['src']:[])].includes(k)) || a.kind==='swap-image'&&!safeImage(a.src) || b.explain) throw Error('사진 변경 또는 보이기 동작이 올바르지 않습니다.');
+        }
+      }
+      const objects=new Map(p.objects.filter(o=>!o.deleted).map(o=>[o.id,o]));
+      for(const o of objects.values()) {
+        const a=o.behavior.click;if(!a)continue;const target=objects.get(a.targetId);
+        if(!target || a.kind==='swap-image'&&target.type!=='image' || a.kind==='toggle'&&target.id===o.id)throw Error('동작 대상은 같은 페이지의 다른 요소 또는 바꿀 사진이어야 합니다.');
+        const seen=new Set([o.id]);let item=o;
+        while(item?.behavior.click?.kind==='toggle'){const id=item.behavior.click.targetId;if(seen.has(id))throw Error('서로를 숨기는 동작은 만들 수 없습니다.');seen.add(id);item=objects.get(id);}
       }
     }
     if (JSON.stringify(state).length > 12000000) throw Error('편집본이 너무 큽니다. 이미지를 줄여 주세요.');

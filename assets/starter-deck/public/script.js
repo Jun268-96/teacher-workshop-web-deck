@@ -9,6 +9,19 @@
   const contents = document.querySelector('#contents');
   let index = 0, tocOpenedByHover = false;
   const editBlocked=()=>document.body.classList.contains('is-editing')&&!document.body.classList.contains('is-behavior-preview');
+  // Built-in actions are data only, scoped to stable object IDs on the same slide.
+  const actionImageOK=v=>typeof v==='string'&&v.length<3000000&&(/^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(v)||/^assets\/[\w./%-]+$/.test(v)&&!decodeURIComponent(v).includes('..'));
+  function clickAction(node){try{const a=JSON.parse(node.dataset.clickAction),page=node.closest('.slide'),target=[...page.querySelectorAll('[data-object-id]')].find(n=>n.dataset.objectId===a.targetId);if(!target||!['swap-image','toggle'].includes(a.kind)||a.kind==='swap-image'&&(!target.matches('img')||!actionImageOK(a.src))||a.kind==='toggle'&&(target===node||target.contains(node)||node.contains(target)))return null;return {action:a,target};}catch{return null;}}
+  function resetActions(scope=deck,editing=editBlocked()){
+    scope.querySelectorAll('[data-action-base-src]').forEach(n=>{n.setAttribute('src',n.dataset.actionBaseSrc);n.removeAttribute('data-action-base-src');n.removeAttribute('data-action-swapped');});
+    scope.querySelectorAll('[data-action-hidden]').forEach(n=>{n.removeAttribute('data-action-hidden');if(n.dataset.actionBaseInert!=='true')n.removeAttribute('inert');n.removeAttribute('data-action-base-inert');});
+    scope.querySelectorAll('[data-click-action]').forEach(node=>{const result=clickAction(node);if(result?.action.kind==='toggle'){node.setAttribute('aria-expanded','false');const n=result.target;if(!n.id)n.id='action-'+n.dataset.objectId;node.setAttribute('aria-controls',n.id);if(!n.hasAttribute('data-action-hidden'))n.dataset.actionBaseInert=String(n.hasAttribute('inert'));n.dataset.actionHidden='true';if(!editing)n.setAttribute('inert','');}});
+  }
+  function runAction(node){const result=clickAction(node);if(!result)return;const {action:a,target}=result;
+    if(a.kind==='swap-image'){if(!target.hasAttribute('data-action-base-src'))target.dataset.actionBaseSrc=target.getAttribute('src');const swapped=target.dataset.actionSwapped==='true';target.setAttribute('src',swapped?target.dataset.actionBaseSrc:a.src);target.dataset.actionSwapped=String(!swapped);}
+    else {const visible=target.dataset.actionHidden==='true';target.dataset.actionHidden=String(!visible);if(visible&&target.dataset.actionBaseInert!=='true')target.removeAttribute('inert');else if(!visible)target.setAttribute('inert','');node.closest('.slide').querySelectorAll('[data-click-action]').forEach(trigger=>{if(clickAction(trigger)?.target===target)trigger.setAttribute('aria-expanded',String(visible));});}
+    hideTooltip();layoutMoved();
+  }
   function layoutMoved(){
     if(document.body.classList.contains('is-resizing')||document.body.classList.contains('is-dragging'))return;
     const page=slides[index];if(!page||page.hidden)return;const frame=page.getBoundingClientRect();
@@ -53,7 +66,7 @@
     contents.querySelectorAll('button').forEach((button, i) => { if (i === index) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current'); });
     prev.disabled = index === 0; next.disabled = index === slides.length - 1;
     if (updateHash) history.replaceState(null, '', `#${active.id}`);
-    deck.scrollTop = 0; setToc(false);hideTooltip();layoutObserver?.disconnect();layoutObserver?.observe(active);active.querySelectorAll('[data-move-x]').forEach(n=>layoutObserver?.observe(n));layoutMoved();
+    deck.scrollTop = 0; setToc(false);hideTooltip();resetActions();layoutObserver?.disconnect();layoutObserver?.observe(active);active.querySelectorAll('[data-move-x]').forEach(n=>layoutObserver?.observe(n));layoutMoved();
     document.querySelector('#deck-status').textContent = `${index + 1} / ${slides.length} · ${active.dataset.title}`;
     document.dispatchEvent(new CustomEvent('workshop:slide', { detail: { id: active.id, index } }));
   }
@@ -65,12 +78,14 @@
   prev.addEventListener('click', () => showSlide(index - 1)); next.addEventListener('click', () => showSlide(index + 1));
   deck.addEventListener('click', event => {
     if(editBlocked()) return;
+    const action=event.target.closest('[data-click-action]');
+    if(action&&clickAction(action)){event.preventDefault();event.stopImmediatePropagation();runAction(action);return;}
     const go=event.target.closest('[data-go]');
     if(go) {const i=slides.findIndex(s=>s.id===go.dataset.go);if(i>=0)showSlide(i);}
     const explain=event.target.closest('[data-explain]');
     if(explain) {event.preventDefault();hideTooltip();const dialog=document.createElement('dialog'),text=document.createElement('p'),close=document.createElement('button');text.textContent=explain.dataset.explain;close.textContent='닫기';close.onclick=()=>dialog.close();dialog.append(text,close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();}
   });
-  deck.addEventListener('keydown',e=>{if(!editBlocked()&&['Enter',' '].includes(e.key)&&e.target.matches('[data-explain]')){e.preventDefault();e.target.click();}});
+  deck.addEventListener('keydown',e=>{if(!editBlocked()&&['Enter',' '].includes(e.key)&&e.target.matches('[data-explain],[data-click-action]')&&!e.target.matches('button,input,select,textarea')){e.preventDefault();e.target.click();}});
   toggle.addEventListener('click', event => {const open=tocOpenedByHover&&event.detail>0?true:contents.hidden;tocOpenedByHover=false;setToc(open);});
   const tocAnchor = document.querySelector('.toc-anchor');
   tocAnchor.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') {setToc(true);tocOpenedByHover=true;} });
@@ -80,7 +95,7 @@
   window.addEventListener('hashchange', () => showSlide(Math.max(0, fromHash()), false));
   document.addEventListener('keydown', async event => {
     if (event.key === 'Escape') { setToc(false); return; }
-    if (document.body.classList.contains('is-editing') || event.altKey || event.ctrlKey || event.metaKey || document.querySelector('dialog[open],[role=dialog][aria-modal=true]')) return;
+    if (event.defaultPrevented || document.body.classList.contains('is-editing') || event.altKey || event.ctrlKey || event.metaKey || document.querySelector('dialog[open],[role=dialog][aria-modal=true]')) return;
     if (event.target.closest('input,textarea,select,[contenteditable]:not([contenteditable=false]),[role=textbox]')) return;
     if (!contents.hidden && tocAnchor.contains(event.target)) return;
     if (event.target.closest('[role=tab]') && ['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
@@ -151,7 +166,7 @@
     setInterval(render, 250); render();
   }
   window.WorkshopDeck = {
-    currentId:()=>slides[index]?.id,layoutMoved,hideTooltip,
+    currentId:()=>slides[index]?.id,layoutMoved,hideTooltip,resetActions,
     go:id=>{const i=slides.findIndex(s=>s.id===id);if(i>=0)showSlide(i);},
     refresh:id=>{slides=[...deck.querySelectorAll(':scope > .slide')];rebuildToc();initialiseTabs();showSlide(Math.max(0,slides.findIndex(s=>s.id===id)));}
   };

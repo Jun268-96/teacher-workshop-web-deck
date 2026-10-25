@@ -14,3 +14,6 @@
 body[data-mascots=off] .cover-grid{display:flex;align-items:center}body[data-mascots=off] .cover-grid>div:first-child{width:100%}body[data-mascots=off] .cover h1{max-width:17ch}body[data-mascots=off] .closing.active{display:flex;justify-content:center}body[data-mascots=off] .closing h2{max-width:20ch}
 
 .workshop-tooltip{position:fixed;z-index:90;pointer-events:none;max-width:min(320px,calc(100vw - 24px));padding:10px 14px;background:var(--ink);color:var(--paper);font:15px/1.5 var(--sans);border:1px solid var(--ink);box-shadow:3px 3px 0 var(--yellow);white-space:pre-wrap;overflow-wrap:anywhere}body:not(.is-editing) [data-explain]{cursor:pointer}dialog:not(#patch-dialog){max-width:min(700px,90vw);border:3px solid var(--pink);padding:30px;background:var(--paper);color:var(--ink)}dialog p{margin-bottom:20px}dialog::backdrop{background:#19262a55}
+/* Reserve the element's place while its click-to-reveal content is hidden. */
+[data-action-hidden="true"]{visibility:hidden!important;pointer-events:none!important}body:not(.is-editing) [data-click-action]{cursor:pointer}
+:is([data-click-action],[data-explain]):focus-visible{outline:3px solid #4d6e33;outline-offset:4px}
