@@ -19,6 +19,7 @@ export async function quickSize(p,value){
  if(await p.locator('#editor-panel').isVisible())await p.locator('[data-ui-action=close]').click();
  await p.locator('#editor-quick-size').fill(String(value));await p.locator('#editor-quick-size').press('Tab');
 }
+export async function manualHeight(p,value){await p.locator('#object-height-mode').selectOption('manual');await p.locator('#object-height').fill(String(value));}
 const panels={'page-save':'page','page-add':'page','page-copy':'page','page-delete':'page','page-up':'page','page-down':'page','object-save':'direct','behavior-save':'behavior','queue-add':'request','annotation':'request','copy':'queue','requests-export':'queue','export':'files','import':'files','presentation':'files','patch':'files','done':'files'};
 export async function action(p,name){
  if(['add-text','add-image','add-video'].includes(name)){

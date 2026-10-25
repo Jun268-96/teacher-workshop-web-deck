@@ -1,4 +1,4 @@
-import {action,panel as section,selectObject,selectPage,editText,quickSize} from './editor-test-helpers.mjs';
+import {action,panel as section,selectObject,selectPage,editText,quickSize,manualHeight} from './editor-test-helpers.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -10,7 +10,7 @@ const starter=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../asse
 const ui=(name,fn)=>test(name,{skip:!resolveTool(starter,'playwright')&&'Playwright unavailable'},fn);
 const near=(a,b,name)=>assert.ok(Math.abs(a-b)<1,`${name}: ${a} != ${b}`);
 async function setup(t,touch=false){
- const dir=await fs.mkdtemp(path.join(os.tmpdir(),'workshop-align-'));await fs.cp(starter,dir,{recursive:true});const server=await serve(dir),{chromium}=await loadPlaywright(dir),browser=await chromium.launch({headless:true}),p=await browser.newPage({viewport:touch?{width:1024,height:768}:{width:1440,height:900},hasTouch:touch,reducedMotion:'reduce'}),errors=[];p.on('pageerror',e=>errors.push(e.message));p.setDefaultTimeout(8000);t.after(async()=>{await browser.close();await new Promise(r=>server.server.close(r));await fs.rm(dir,{recursive:true,force:true});assert.deepEqual(errors,[]);});await p.goto(server.url+'?edit=1#compare');await p.locator('#edit-toggle').click();await section(p,'페이지·발표 노트');await action(p,'page-add');await action(p,'add-text');await quickSize(p,32);await section(p,'direct');await p.locator('#object-width').fill('20');await p.locator('#object-height').fill('60');await action(p,'object-save');return {p,browser,dir,node:p.locator('.slide.active [data-added]').last()};
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'workshop-align-'));await fs.cp(starter,dir,{recursive:true});const server=await serve(dir),{chromium}=await loadPlaywright(dir),browser=await chromium.launch({headless:true}),p=await browser.newPage({viewport:touch?{width:1024,height:768}:{width:1440,height:900},hasTouch:touch,reducedMotion:'reduce'}),errors=[];p.on('pageerror',e=>errors.push(e.message));p.setDefaultTimeout(8000);t.after(async()=>{await browser.close();await new Promise(r=>server.server.close(r));await fs.rm(dir,{recursive:true,force:true});assert.deepEqual(errors,[]);});await p.goto(server.url+'?edit=1#compare');await p.locator('#edit-toggle').click();await section(p,'페이지·발표 노트');await action(p,'page-add');await action(p,'add-text');await quickSize(p,32);await section(p,'direct');await p.locator('#object-width').fill('20');await manualHeight(p,60);await action(p,'object-save');return {p,browser,dir,node:p.locator('.slide.active [data-added]').last()};
 }
 async function dragTo(p,node,left,top){const r=await node.boundingBox(),x=r.x+r.width/2,y=r.y+r.height/2;await p.mouse.move(x,y);await p.mouse.down();await p.mouse.move(x+left-r.x,y+top-r.y,{steps:10});}
 const center=r=>({x:r.x+r.width/2,y:r.y+r.height/2});

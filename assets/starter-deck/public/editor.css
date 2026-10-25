@@ -19,6 +19,7 @@ body.is-editing #deck{background:var(--paper)}
 #editor-scene-preview .scene-button{background:var(--editor-accent);color:white;padding:8px 18px;min-height:36px}#editor-scene-preview .scene-button:hover{background:#32482d}
 #workshop-editor #editor-panel{z-index:80}
 #editor-context #editor-quick-weight{width:64px;min-height:30px;padding:3px 5px;margin:0;border:0;background:transparent;font:12px var(--sans)}
+#direct-tools .placement-full{grid-column:1/-1}#direct-tools .placement-help,#direct-tools small{display:block;color:var(--editor-muted);font-size:11px;line-height:1.6;margin:4px 0 8px}#direct-tools .placement-position{border:0;border-top:1px solid var(--editor-line);padding:12px 0 0;margin:14px 0 6px;min-width:0}#direct-tools .placement-position legend{font-size:13px;font-weight:650;padding:0 8px 0 0}
 #queue-annotation-help,#queue-inbox-help{font-size:12px;color:var(--editor-muted);margin:8px 0 16px}
 #workshop-editor #queue-inbox-button{background:var(--editor-accent);color:#fff}
 #workshop-editor #queue-annotation-button,#workshop-editor [data-action=share-annotation]{background:var(--editor-accent);color:#fff}
