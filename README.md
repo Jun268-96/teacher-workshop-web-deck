@@ -4,7 +4,7 @@
 
 자료를 먼저 읽고 어울리는 기능을 체험으로 추천합니다. 사용자가 고르면 전체 페이지 구성을 확인받은 뒤 제작합니다. 기능 목록이나 긴 기획서를 사용자가 미리 작성할 필요는 없습니다.
 
-편집기 **수정 예시**에서 여덟 가지 전후 화면을 직접 체험하고, 관련 프롬프트를 현재 페이지나 선택한 요소의 수정 요청으로 담을 수 있습니다. 요청 목록 → 프로젝트 요청함/ChatGPT 주석 → 변경안 확인으로 이어지며, 체험만으로 실제 자료가 바뀌지는 않습니다. [수정 예시와 요청 흐름](references/editor-examples.md)
+편집기 **수정 예시**는 현재 페이지의 글·수치·사진·질문·순서를 읽고 수정안 세 가지를 추천합니다. 내 자료로 전후 화면을 직접 체험하고, 관련 프롬프트를 현재 페이지나 선택한 요소의 수정 요청으로 담을 수 있습니다. 기존 여덟 가지 공통 체험은 `기능 예시`에서 볼 수 있습니다. 요청 목록 → 프로젝트 요청함/ChatGPT 주석 → 변경안 확인으로 이어지며, 체험만으로 실제 자료가 바뀌지는 않습니다. [수정 예시와 요청 흐름](references/editor-examples.md)
 
 **연수 장면 실험실**에는 클릭 애니메이션, 움직이는 제목, 모션 그래픽, 이미지 슬라이드, 전후 비교, 부분 확대, 뒤집기, 클릭 지점, 진행 조작, 스크롤, 입체 효과, 배치 전환, 선택 분기, 설문, 단어 모으기, 순서 변경의 16가지 예시가 있습니다.
 
@@ -13,14 +13,6 @@ node scripts/preview-scenes.mjs --dest ./scene-preview --serve --recommend revea
 ```
 
 설치·계정 없이 출력된 URL에서 체험합니다(Node 필요). 설문·단어는 한 브라우저 예시이며 여러 기기의 실제 집계에는 서버 연결이 필요합니다. 선택은 복사/JSON으로 전달할 수 있고, 전체 구성안 승인을 대신하지 않습니다. [자료 기반 추천·선택 흐름](references/scene-discovery.md) · [CSS 효과 조사와 공식 출처](references/scene-effects-research.md)
-
-**서버가 연결된 가계·기업 예시**도 포함합니다. 가계의 노동·소비와 기업의 임금·재고·판매가 교사 화면에 함께 반영됩니다. 독립 브라우저로 체험하고, 실제 서버 계산·중복 요청·끊김·권한·저장 실패까지 검사합니다. 공개 배포와 학교 기기 접속을 완료한 예시는 아닙니다.
-
-```sh
-node scripts/preview-economy.mjs --dest ../economy-example --serve --port 8798
-```
-
-[자료 근거·작동 규칙·검증 기준](references/economy-lab.md)
 
 [이전 정적 템플릿 체험](https://vanollim-deck-harness-20261023.hhj96916.workers.dev/) · [스킬 지침](SKILL.md) · [ZIP 다운로드](https://github.com/Jun268-96/teacher-workshop-web-deck/archive/refs/heads/main.zip)
 
@@ -135,3 +127,5 @@ node scripts/package-deck.mjs --project ../editor-live-demo --dest ../demo-sourc
 ## 브랜드와 글꼴
 
 기존 반올림 디자인의 색감·글꼴·프레임을 유지하되, 새 발표자료에는 연구회 이름·로고를 기본으로 표시하지 않습니다. 동봉된 기존 브랜드 자료와 캐릭터는 요청받은 경우에만 선택적으로 사용합니다. Pretendard의 [동봉 라이선스](assets/starter-deck/public/assets/fonts/Pretendard-LICENSE.txt)는 유지해야 합니다.
+
+별도 참고: [가계·기업 서버 예시](references/economy-lab.md)는 독립 앱의 공유 상태 검증 자료입니다. 연수 편집기의 기본 출력이나 자동 제작 대상은 아닙니다.

@@ -131,14 +131,15 @@
   }
   function requestExample(input) {
     if(!editing||behaviorPreview||pending)throw Error('편집 화면에서 변경안 확인을 마친 뒤 요청해 주세요.');
-    const allowed=['reveal','motion','compare','carousel','tool','participation','scenario','workflow'];
+    const allowed=['reveal','motion','compare','carousel','tool','participation','scenario','workflow','focus','spotlight'];
     if(!input||!allowed.includes(input.example?.id)||!['page','object'].includes(input.scope)||typeof input.prompt!=='string'||!input.prompt.trim()||input.prompt.length>6000)throw Error('수정 요청과 대상을 확인해 주세요.');
     if(input.revision!==doc.revision||input.pageId!==current().id)throw Error('페이지가 바뀌었습니다. 예시 창을 다시 열어 대상을 확인해 주세요.');
     if(queue.length>=100)throw Error('요청은 100개까지 모을 수 있습니다. 기존 요청을 먼저 처리해 주세요.');
     const p=current(),o=p.objects.find(o=>o.id===input.objectId&&!o.deleted);
     if(!o)throw Error('선택한 대상이 없어졌습니다. 예시 창을 다시 열어 주세요.');
     const ctx=JSON.parse(JSON.stringify(context(p,o),(key,value)=>typeof value==='string'?value.replace(/data:(?:image|video)\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+/gi,'embedded-media: 원본 편집본 참조'):value));ctx.scope=input.scope;
-    ctx.example={id:input.example.id,title:String(input.example.title).slice(0,100),demo:'local-example',intent:String(input.example.intent).slice(0,1000)};
+    let proposal=null;if(input.example.origin==='current-page'){if(input.example.proposal?.scope!==input.scope)throw Error('미리보기의 요청 범위를 확인해 주세요.');const previewRoot=input.scope==='object'?document.querySelector(`#deck [data-object-id="${o.id}"]`):document.getElementById(p.id);proposal=window.WorkshopPageExamples.inspectRequest(p,input.example.proposal,previewRoot,o.id);}
+    ctx.example={id:input.example.id,title:String(input.example.title).slice(0,100),demo:proposal?'current-page-preview':'local-example',intent:String(input.example.intent).slice(0,1000),...(proposal?{reason:String(input.example.reason).slice(0,500),proposal}:{})};
     ctx.page.objects=p.objects.filter(o=>!o.deleted).map(o=>({id:o.id,type:o.type,label:o.type==='text'?o.content.slice(0,240):objectLabel(o,p)}));
     const request={id:M.uid('request'),request:input.prompt.trim(),trigger:'',context:ctx};
     queue.push(request);persist();renderQueue();status('수정 요청을 목록에 담았습니다. 요청함에 저장하거나 ChatGPT 주석으로 보내세요.');

@@ -66,4 +66,4 @@
 
 공식 비교 근거(2026-10-25 확인): [Canva Code](https://www.canva.com/ai-code-generator/), [Canva Code 2.0](https://www.canva.com/newsroom/news/canva-code/), [Mentimeter AI Assistant](https://help.mentimeter.com/en/articles/16730234-create-and-edit-mentis-with-the-ai-assistant).
 
-구체적인 제작·검증 기준은 [가계·기업 서버 예시](economy-lab.md)를 참고한다. 자료 → 역할/행동/상태 계약 → 독립 화면 구현 → 공유 상태·복구 검증으로 이어가는 별도 참조 프로젝트이며, 원래 연수자료와 운영 계정은 건드리지 않는다.
+장면 추천의 기본 단위는 **현재 연수 페이지**다. 내 자료의 글·사진·수치·질문을 사용해 전달 방식을 바꾸는 시안을 먼저 보여준다. 수업 앱 개발로 자동 전환하지 않는다. 별도 앱 구현을 요청받은 경우에만 [가계·기업 서버 예시](economy-lab.md)를 공유 상태 검증 참고로 사용할 수 있다.
